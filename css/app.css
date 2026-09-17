@@ -1,0 +1,987 @@
+/* ==========================================================================
+   WE RISE — app.css
+
+   Plain CSS, no build step. Three faces, all self-hosted:
+     Instrument Serif — the display voice: tall, condensed, high contrast
+     Pinyon Script    — swash capitals only, set into the serif words
+     Space Grotesk    — every small label and all running text
+
+   Rules the page is built on:
+     · nothing is ever drawn over the figure. The canvas measures the
+       silhouette per frame and app.js sizes the type to the space beside it.
+     · glass is a material, not a white box: it refracts what is behind it
+       and catches light on its rim.
+   ========================================================================== */
+
+:root {
+  --ink:        #14231a;
+  --ink-soft:   #40584a;
+  --ink-faint:  #84978c;
+  --paper:      #eef3ee;
+  --moss:       #2c7a4b;
+
+  /* the display ink: a deep sea-green, lighter at the top of each letter */
+  --teal-hi:    #7fb3a6;
+  --teal:       #3f786b;
+  --teal-lo:    #2a5a4f;
+  --teal-cap:   #467f72;
+
+  /* the live accent: green on the page, white in the dark room */
+  --accent:     #2c7a4b;
+  --on-accent:  #f4f8f5;
+
+  --shell:      min(1320px, 90vw);
+  --gut:        max(1.5rem, calc((100vw - var(--shell)) / 2));
+  --beat-gut:   clamp(1.4rem, 4vw, 4.5rem);
+  --fig-gap:    1.5rem;
+  --ease:       cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* In the room the chrome goes white — one class repaints everything that
+   reads --accent. */
+html.is-dark { --accent: #ffffff; --on-accent: #14231a; }
+
+*, *::before, *::after { box-sizing: border-box; }
+html { color-scheme: light; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink-soft);
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-size: clamp(1rem, 0.35vw + 0.92rem, 1.1rem);
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: clip;
+}
+
+h1, h2, h3 { color: var(--ink); font-weight: 400; margin: 0; }
+p { margin: 0; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; }
+::selection { background: rgb(44 122 75 / 0.2); }
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+.shell { width: var(--shell); margin-inline: auto; }
+
+/* nothing scrolls until you are through the gate */
+html.is-booting, html.is-booting body { overflow: hidden; height: 100%; }
+
+.lede {
+  max-width: 44ch;
+  font-size: clamp(1.02rem, 0.5vw + 0.92rem, 1.2rem);
+  line-height: 1.72;
+  color: var(--ink-soft);
+}
+.lede.centre { margin-inline: auto; text-align: center; }
+
+/* ==========================================================================
+   THE DISPLAY VOICE
+
+   A tall serif word with a script capital set into it. The capital is set
+   large and pulled in under the next letter so its flourish wraps the word,
+   the way an engraver would join them. The words take a soft vertical
+   gradient; the capital is solid, because a gradient clipped to text would
+   cut its swashes off at the line box.
+   ========================================================================== */
+
+.w-lg, .t-lg {
+  font-family: 'Instrument Serif', 'Times New Roman', serif;
+  font-weight: 400;
+  letter-spacing: -0.035em;
+  background: linear-gradient(180deg, var(--teal-hi) 0%, var(--teal) 46%, var(--teal-lo) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.w-sm, .t-sm {
+  font-family: 'Instrument Serif', 'Times New Roman', serif;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  color: var(--teal);
+}
+.cap {
+  font-family: 'Pinyon Script', cursive;
+  font-weight: 400;
+  font-size: 1.36em;
+  line-height: 0;
+  letter-spacing: 0;
+  color: var(--teal-cap);
+  -webkit-text-fill-color: var(--teal-cap);
+  margin-right: -0.06em;
+  position: relative;
+  top: 0.02em;
+}
+
+/* ==========================================================================
+   LIQUID GLASS
+
+   .lg is the chrome material. Almost no fill; a rim that catches light on
+   the top-left and bottom-right; a faint inner glow for thickness. In
+   Chromium ui.js adds real refraction through the rounded bezel
+   (--lg-filter); everywhere else a light frost stands in.
+   ========================================================================== */
+
+.lg {
+  isolation: isolate;
+  background: rgb(255 255 255 / 0.06);
+  backdrop-filter: blur(12px) saturate(170%);
+  -webkit-backdrop-filter: blur(12px) saturate(170%);
+  box-shadow:
+    inset 1px 1px 0 rgb(255 255 255 / 0.62),
+    inset -1px -1px 0 rgb(255 255 255 / 0.24),
+    inset 0 0 16px rgb(255 255 255 / 0.12),
+    0 10px 30px rgb(20 50 40 / 0.10),
+    0 1px 3px rgb(20 50 40 / 0.07);
+  transition: background 0.6s var(--ease), box-shadow 0.6s var(--ease), color 0.6s var(--ease);
+}
+.lg.lg-on {
+  backdrop-filter: var(--lg-filter);
+  -webkit-backdrop-filter: var(--lg-filter);
+}
+.lg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg,
+    rgb(255 255 255 / 0.95) 0%,
+    rgb(255 255 255 / 0.2) 30%,
+    rgb(255 255 255 / 0.05) 52%,
+    rgb(255 255 255 / 0.2) 74%,
+    rgb(255 255 255 / 0.75) 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 1;
+}
+.lg-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+html.is-dark .lg {
+  background: rgb(0 0 0 / 0.14);
+  box-shadow:
+    inset 1px 1px 0 rgb(255 255 255 / 0.34),
+    inset -1px -1px 0 rgb(255 255 255 / 0.12),
+    inset 0 0 16px rgb(255 255 255 / 0.05),
+    0 10px 30px rgb(0 0 0 / 0.35);
+}
+
+/* the older frosted material, still used by the waitlist form */
+.glass {
+  position: relative;
+  isolation: isolate;
+  background: rgb(255 255 255 / 0.32);
+  backdrop-filter: blur(24px) saturate(170%);
+  -webkit-backdrop-filter: blur(24px) saturate(170%);
+  box-shadow:
+    inset 1px 1px 0 rgb(255 255 255 / 0.7),
+    inset -1px -1px 0 rgb(255 255 255 / 0.3),
+    0 12px 34px rgb(20 50 40 / 0.10);
+}
+
+/* ==========================================================================
+   CHROME
+   ========================================================================== */
+
+/* ---- sound, top left ---------------------------------------------------- */
+.sound {
+  position: fixed;
+  top: 1.1rem;
+  left: 1.1rem;
+  z-index: 70;
+  width: 2.9rem;
+  height: 2.9rem;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: var(--ink);
+}
+.sound svg { width: 1.45rem; height: 1.45rem; overflow: visible; }
+.sound .wave {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+}
+/* playing: the line becomes a travelling wave */
+.sound.is-playing .wave { animation: wave 1.6s ease-in-out infinite; }
+@keyframes wave {
+  0%, 100% { d: path("M5 16 C8 11 8 11 10.5 16 S13 21 16 16 S19 11 21.5 16 S24 21 27 16"); }
+  50%      { d: path("M5 16 C8 20 8 20 10.5 16 S13 12 16 16 S19 20 21.5 16 S24 12 27 16"); }
+}
+html.is-dark .sound { color: #fff; }
+
+/* ---- ruler, top centre -------------------------------------------------- */
+.ruler {
+  position: fixed;
+  top: 1.35rem;
+  left: 50%;
+  z-index: 70;
+  width: clamp(8rem, 14vw, 12rem);
+  height: 1.1rem;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.ruler-ticks {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.ruler-ticks i {
+  width: 1px;
+  height: 0.45rem;
+  background: rgb(20 35 26 / 0.28);
+  transition: background 0.6s var(--ease);
+}
+.ruler-ticks i.is-major { height: 0.7rem; background: rgb(20 35 26 / 0.45); }
+.ruler-mark {
+  position: absolute;
+  inset: -0.2rem 0 auto 0;
+  height: 1.2rem;
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+}
+.ruler-mark::before {
+  content: "";
+  position: absolute;
+  left: -1px;
+  top: 0;
+  width: 2px;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--accent);
+  transition: background 0.6s var(--ease);
+}
+html.is-dark .ruler-ticks i { background: rgb(255 255 255 / 0.35); }
+html.is-dark .ruler-ticks i.is-major { background: rgb(255 255 255 / 0.6); }
+
+/* ---- XP, top right ------------------------------------------------------ */
+.xp {
+  position: fixed;
+  top: 1.1rem;
+  right: 1.1rem;
+  z-index: 70;
+  height: 2.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0 1rem 0 0.8rem;
+  border-radius: 999px;
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-size: 0.95rem;
+  line-height: 1;
+  color: var(--ink);
+}
+.xp-star { width: 0.95rem; height: 0.95rem; fill: #f2c14e; filter: drop-shadow(0 0 4px rgb(255 214 102 / 0.8)); }
+.xp-n, .xp-u { text-box: trim-both cap alphabetic; }
+.xp-n { font-weight: 500; font-variant-numeric: tabular-nums; min-width: 1.6ch; text-align: right; }
+.xp-u { color: var(--ink-faint); font-size: 0.85em; }
+.xp.is-bump .xp-star { animation: bump 0.7s var(--ease); }
+@keyframes bump { 0% { transform: scale(1); } 35% { transform: scale(1.6) rotate(20deg); } 100% { transform: scale(1); } }
+.xp-float {
+  position: absolute;
+  right: 1rem;
+  top: 100%;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #c79a2e;
+  pointer-events: none;
+}
+html.is-dark .xp { color: #fff; }
+html.is-dark .xp-u { color: rgb(255 255 255 / 0.6); }
+
+/* ---- the dock, bottom centre --------------------------------------------
+   A glass capsule holding three pieces: the wordmark, the one action that
+   matters, and the way back up. Every label is trimmed to its cap height so
+   it sits on the optical centre of its pill rather than the line box's. */
+.dock {
+  position: fixed;
+  left: 50%;
+  bottom: 1.2rem;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem;
+  border-radius: 999px;
+  transform: translateX(-50%);
+}
+/* Text pills are block boxes trimmed to cap height, then padded back out to
+   the pill height: the label sits on its optical centre, not the line box. */
+.dock > a {
+  display: block;
+  height: 2.85rem;
+  border-radius: 999px;
+  white-space: nowrap;
+  text-align: center;
+  line-height: 1;
+  text-box: trim-both cap alphabetic;
+  padding-block: calc((2.85rem - 1cap) / 2);
+}
+.dock-mark {
+  padding: 0 1.15rem 0 1.25rem;
+  font-family: 'Instrument Serif', serif;
+  font-size: 1.32rem;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  transition: color 0.6s var(--ease);
+}
+.dock-mark em { font-style: italic; color: var(--moss); transition: color 0.6s var(--ease); }
+.dock-cta {
+  min-width: clamp(11rem, 19vw, 17rem);
+  padding: 0 1.8rem;
+  background: var(--ink);
+  color: #f4f8f5;
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.12), 0 4px 14px rgb(20 35 26 / 0.18);
+  transition: background 0.6s var(--ease), color 0.6s var(--ease), transform 0.45s var(--ease);
+}
+.dock > .dock-up {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  width: 2.85rem;
+  background: #fff;
+  color: var(--ink);
+  box-shadow: 0 2px 10px rgb(20 50 40 / 0.12), inset 0 -1px 0 rgb(20 50 40 / 0.06);
+  transition: transform 0.45s var(--ease);
+}
+.dock-up svg { width: 1.1rem; height: 1.1rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+html.is-dark .dock-mark, html.is-dark .dock-mark em { color: #fff; text-shadow: 0 1px 10px rgb(0 0 0 / 0.55); }
+html.is-dark .xp, html.is-dark .sound { text-shadow: 0 1px 10px rgb(0 0 0 / 0.5); filter: drop-shadow(0 1px 6px rgb(0 0 0 / 0.25)); }
+html.is-dark .dock-cta { background: #fff; color: var(--ink); }
+
+/* ---- cursors -------------------------------------------------------------
+   Native cursors from our own artwork, never the system defaults: a dark
+   arrow on the page, a pointing hand over anything clickable, an open hand
+   on the gate and a closed one while drawing. Being native, they carry no
+   lag at all. Buttons do not change on hover — the cursor is the feedback. */
+html, body {
+  cursor: url("../assets/cursors/arrow.svg") 6 3, default;
+}
+a, button, label, [role="button"], .dock a, .signin .btn-ink {
+  cursor: url("../assets/cursors/point.svg") 13 4, pointer;
+}
+input { cursor: text; }
+.gate { cursor: url("../assets/cursors/arrow.svg") 6 3, default; }
+.gate.is-ready { cursor: url("../assets/cursors/grab.svg") 16 16, grab; }
+.gate.is-drawing, .gate.is-ready:active { cursor: url("../assets/cursors/grabbing.svg") 16 16, grabbing; }
+.gate.is-closed { cursor: url("../assets/cursors/arrow.svg") 6 3, default; }
+
+/* ==========================================================================
+   THE GATE
+   ========================================================================== */
+
+.gate {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 50% 60%, #9cc4b6 0%, #5f8f82 70%, #4b786c 100%);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.gate-gl {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+/* a live grain over the ice at full resolution, the texture the shader
+   cannot hold once it is scaled up */
+.gate-noise {
+  position: absolute;
+  inset: -50%;
+  pointer-events: none;
+  opacity: 0.5;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: grain 0.9s steps(6) infinite;
+}
+@keyframes grain {
+  0%   { transform: translate(0, 0); }
+  17%  { transform: translate(-6%, 4%); }
+  33%  { transform: translate(5%, -7%); }
+  50%  { transform: translate(-3%, 8%); }
+  67%  { transform: translate(8%, 2%); }
+  83%  { transform: translate(-7%, -5%); }
+  100% { transform: translate(0, 0); }
+}
+.gate.is-reward .gate-noise { opacity: 0; transition: opacity 0.6s; }
+
+/* the loading counter: drawn under the ice by gate.js; this element only
+   carries the number for anything reading the page */
+.gate-count {
+  visibility: hidden;
+  position: absolute;
+  left: clamp(1.4rem, 2.6vw, 2.8rem);
+  bottom: clamp(1rem, 2.2vw, 2.2rem);
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: clamp(5rem, 11vw, 10rem);
+  line-height: 0.8;
+  letter-spacing: -0.06em;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.gate-frost {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 50%, transparent 50%, rgb(20 50 42 / 0.22) 100%);
+  opacity: calc(1 - var(--white, 0));
+  pointer-events: none;
+}
+/* the white-out, for the no-WebGL path (the shader does its own) */
+.gate::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+}
+.gate.no-gl::after { opacity: var(--white, 0); }
+
+.gate-copy {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: grid;
+  justify-items: center;
+  gap: 0.9rem;
+  text-align: center;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.gate-label {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-size: clamp(0.85rem, 1.1vw, 1.05rem);
+  font-weight: 500;
+  letter-spacing: 0.34em;
+  text-indent: 0.34em;
+  text-transform: uppercase;
+  color: #fff;
+  text-shadow: 0 0 2px rgb(20 60 50 / 0.35), 0 1px 18px rgb(20 60 50 / 0.55);
+}
+.gate-sub {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 0.7);
+  opacity: 0;
+  visibility: hidden;
+}
+.gate.is-drawing .gate-sub { opacity: 0 !important; transition: opacity 0.3s; }
+.gate.is-closed .gate-copy { opacity: 0; transition: opacity 0.4s ease; }
+
+.gate-reward {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: grid;
+  justify-items: center;
+  gap: 1.6rem;
+  margin: -6.5rem 0 0 -8rem;
+  width: 16rem;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.gr-gem { position: relative; will-change: transform; }
+.gr-star {
+  width: 6.5rem;
+  height: 6.5rem;
+  display: block;
+  filter: drop-shadow(0 0 18px rgb(255 214 102 / 0.75)) drop-shadow(0 0 60px rgb(255 230 150 / 0.55));
+}
+.gr-xp {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-size: clamp(2.2rem, 3.4vw, 3.2rem);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: rgb(120 165 150 / 0.6);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ==========================================================================
+   ACT ONE — the pinned story
+   ========================================================================== */
+
+#act-one { position: relative; }
+
+/* white light in the middle, the mint gathering toward the edges */
+#stage {
+  position: relative;
+  height: 100svh;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 95% at 50% 36%, #ffffff 0%, #f6faf8 34%, #e2efe9 72%, #cfe4da 100%);
+}
+
+#film {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  opacity: 0;
+  will-change: opacity, transform;
+}
+
+.snow {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+}
+
+.mist {
+  position: absolute;
+  inset: -12% -12% -6% -12%;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+.mist svg, .clouds svg { width: 100%; height: 100%; display: block; }
+
+/* ---- the opening line ---------------------------------------------------- */
+.title, .close-title {
+  display: inline-grid;
+  justify-items: end;
+  line-height: 0.8;
+  white-space: nowrap;
+}
+.title {
+  --t: clamp(4.6rem, 12.5vw, 13rem);
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -54%);
+  font-size: var(--t);
+  will-change: transform, opacity;
+}
+.title .t-sm, .close-title .t-sm {
+  font-size: 0.66em;
+  margin-bottom: -0.16em;
+  margin-right: 0.04em;
+  position: relative;
+  z-index: 1;
+}
+.title-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 6.6rem;
+  transform: translateX(-50%);
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-size: 0.66rem;
+  letter-spacing: 0.3em;
+  text-indent: 0.3em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.title-hint::after {
+  content: "";
+  display: block;
+  width: 1px;
+  height: 2.2rem;
+  margin: 0.7rem auto 0;
+  background: linear-gradient(to bottom, var(--ink-faint), transparent);
+  animation: drip 2.2s var(--ease) infinite;
+  transform-origin: top;
+}
+@keyframes drip {
+  0%   { transform: scaleY(0); opacity: 1; }
+  60%  { transform: scaleY(1); opacity: 1; }
+  100% { transform: scaleY(1); opacity: 0; }
+}
+
+/* ---- the beats ----------------------------------------------------------
+   Each beat is one sentence in two parts: part A high on one side, part B
+   low on the other. The parts are hung from the page gutter and never given
+   a width — app.js scales the type (--fit) so the longer one clears the
+   figure at its narrowest moment. --vel is the velocity lag. */
+.beats {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transform: translate3d(0, var(--vel, 0px), 0);
+  will-change: transform;
+}
+
+.beat {
+  --lead: calc(clamp(3rem, 8.2vw, 10rem) * var(--fit, 0.7));
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  will-change: opacity;
+}
+
+.part {
+  position: absolute;
+  display: grid;
+  justify-items: end;
+  line-height: 0.84;
+  white-space: nowrap;
+}
+.part .w-lg { font-size: var(--lead); }
+.part .w-sm { font-size: calc(var(--lead) * 0.5); }
+.part-a .w-sm { margin-top: -0.02em; margin-right: 0.08em; }
+.part-b .w-sm { margin-bottom: -0.1em; margin-right: 0.12em; }
+
+/* Stays in step with PART_Y in app.js, which measures the silhouette at
+   exactly these heights. */
+.part-a { top: 31%; transform: translateY(-50%); }
+.part-b { top: 71%; transform: translateY(-50%); }
+
+.beat[data-flip="0"] .part-a { left: var(--beat-gut); }
+.beat[data-flip="0"] .part-b { right: var(--beat-gut); }
+.beat[data-flip="1"] .part-a { right: var(--beat-gut); }
+.beat[data-flip="1"] .part-b { left: var(--beat-gut); }
+
+/* ---- the wipe out of act one ---- */
+.clouds {
+  position: absolute;
+  inset: -10% -10% auto -10%;
+  height: 130%;
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+/* ==========================================================================
+   THE WIPE AND THE QUOTE
+   ========================================================================== */
+
+.wash {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+  will-change: opacity;
+}
+
+.quote-stage {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  visibility: hidden;
+  pointer-events: none;
+}
+.quote-stage.is-on { visibility: visible; }
+
+/* While a white veil fully covers the stage nothing dark may sit under it:
+   at the stage's sub-pixel edge a black layer under a white one blends into
+   a grey hairline. So the layers under full white are removed, not covered. */
+/* ---- the red room ---- */
+.shards-film {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  visibility: hidden;
+  /* the room's light, for the instant before WebGL draws (or if it cannot) */
+  background: radial-gradient(120% 90% at 50% 40%, #c8101a 0%, #76060c 55%, #220204 100%);
+}
+.shards-film.is-on { visibility: visible; }
+/* once the room has faded in, nothing of the hero needs drawing under it */
+#stage.in-red > :not(.shards-film):not(.red-copy):not(.portal-film):not(.sr-only),
+#stage.in-portal > :not(.portal-film):not(.shards-film):not(.red-copy):not(.sr-only) { visibility: hidden; }
+
+/* ---- the red room's words ---- */
+.red-copy { position: absolute; inset: 0; pointer-events: none; }
+.red-but, .red-line {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  margin: 0;
+  color: #fff;
+  opacity: 0;
+  white-space: nowrap;
+  transform: translate(-50%, -50%);
+  text-shadow: 0 0 24px rgb(255 220 220 / 0.55), 0 0 60px rgb(255 120 120 / 0.35);
+  will-change: opacity, transform;
+}
+.red-but {
+  font-family: 'Instrument Serif', serif;
+  font-style: italic;
+  font-size: clamp(3.6rem, 8vw, 7.5rem);
+  letter-spacing: -0.02em;
+}
+.red-line {
+  display: inline-grid;
+  justify-items: start;
+  line-height: 0.8;
+  font-size: clamp(4.4rem, 11vw, 11rem);
+}
+.red-line .t-sm {
+  font-family: 'Pinyon Script', cursive;
+  font-size: 0.34em;
+  margin: 0 0 -0.34em 0.1em;
+  position: relative;
+  z-index: 1;
+  color: #fff;
+}
+.red-line .t-lg, .red-line .t-sm {
+  background: none;
+  -webkit-text-fill-color: #fff;
+  color: #fff;
+}
+.red-line .cap { color: #fff; -webkit-text-fill-color: #fff; }
+
+/* ---- the portal ---- */
+.portal-film {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  visibility: hidden;
+  touch-action: none;
+}
+.portal-film.is-on { visibility: visible; }
+html.is-locked, html.is-locked body { overflow: hidden; }
+
+#stage.in-quote { background: #fff; }
+#stage.in-quote > :not(.quote-stage):not(.sr-only) { visibility: hidden; }
+
+/* the line comes into focus: from soft, loose and slightly large to sharp */
+.quote-wrap {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding-inline: var(--gut);
+  opacity: calc(var(--quote, 0) * 1.4);
+  transform: scale(calc(1.07 - var(--quote, 0) * 0.07));
+  filter: blur(calc((1 - var(--quote, 0)) * 16px));
+  will-change: transform, opacity, filter;
+}
+.quote-wrap .q-line { letter-spacing: calc((1 - var(--quote, 0)) * 0.14em); }
+
+/* Two set lines, never reflowed; app.js fits the size to the longer one. */
+.quote {
+  --q: clamp(2.8rem, 7vw, 9rem);
+  text-align: center;
+  font-family: 'Instrument Serif', serif;
+  font-weight: 400;
+  font-size: calc(var(--q) * var(--q-fit, 1));
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  color: var(--teal-lo);
+}
+.q-line { display: block; white-space: nowrap; }
+.quote em {
+  font-style: italic;
+  font-size: 1.2em;
+  line-height: 0.9;
+  color: #c8372c;
+  letter-spacing: -0.03em;
+}
+.q-mark { color: var(--teal-hi); font-style: normal; }
+
+.quote-still { position: relative; height: 100svh; overflow: hidden; }
+
+/* the red room, still, for reduced motion */
+.red-still {
+  position: relative;
+  padding: clamp(6rem, 14vh, 9rem) var(--gut) clamp(6rem, 12vh, 8rem);
+  background: radial-gradient(120% 80% at 50% 30%, #c8101a 0%, #76060c 60%, #220204 100%);
+  color: #fff;
+  text-align: center;
+}
+.red-still-but {
+  margin: 0;
+  font-family: 'Instrument Serif', serif;
+  font-style: italic;
+  font-size: clamp(2.6rem, 6vw, 4.5rem);
+}
+.red-still .red-still-line {
+  position: static;
+  opacity: 1;
+  transform: none;
+  white-space: normal;
+  margin: 0.2em auto 0.6em;
+}
+.red-still-stats {
+  list-style: none;
+  margin: 0 auto;
+  padding: 0;
+  max-width: 68rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr));
+  gap: 1rem;
+  text-align: left;
+}
+.red-still-stats li {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1.4rem 1.5rem;
+  border: 1px solid rgb(255 255 255 / 0.28);
+  background: linear-gradient(160deg, rgb(255 255 255 / 0.16), rgb(255 255 255 / 0.05));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.35);
+  clip-path: polygon(0 4%, 92% 0, 100% 38%, 97% 100%, 6% 94%);
+}
+.rs-big { font-family: 'Instrument Serif', serif; font-size: clamp(3rem, 6vw, 4.2rem); line-height: 0.9; }
+.rs-unit { font-size: 0.45em; margin-left: 0.12em; }
+.rs-words { font-family: 'Instrument Serif', serif; font-style: italic; font-size: 1.25rem; line-height: 1.25; }
+.rs-source { font-family: 'Space Grotesk', system-ui, sans-serif; font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; opacity: 0.7; }
+
+/* ==========================================================================
+   CLOSE — the waitlist
+   ========================================================================== */
+
+#start {
+  position: relative;
+  margin-top: -2px;
+  min-height: 100svh;
+  display: grid;
+  align-content: center;
+  padding-block: clamp(7rem, 16vh, 11rem) clamp(7rem, 12vh, 9rem);
+  text-align: center;
+  background: linear-gradient(180deg, #ffffff 0%, var(--paper) 55%, #dcebe4 100%);
+}
+.close-title {
+  font-size: clamp(4.6rem, 13vw, 12rem);
+  margin: 0 auto 1.8rem;
+}
+#start .lede { margin-bottom: 2.6rem; }
+
+.btn-ink {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.9rem 1.5rem;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #f2f7f2;
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  font-size: 0.92rem;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  transition: transform 0.45s var(--ease), background 0.45s var(--ease);
+}
+
+.signin {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: min(30rem, 100%);
+  margin-inline: auto;
+  padding: 0.4rem 0.4rem 0.4rem 0.4rem;
+  border-radius: 999px;
+}
+.signin input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  padding: 0.85rem 1.1rem;
+  font: inherit;
+  font-size: 0.98rem;
+  color: var(--ink);
+}
+.signin input::placeholder { color: var(--ink-faint); }
+.signin input:focus { outline: none; }
+.signin .btn-ink { flex: none; border: 0; }
+.signin .btn-ink:disabled { transform: none; }
+.signin :focus-visible { outline: 2px solid var(--moss); outline-offset: 3px; border-radius: 999px; }
+.signin.is-error { box-shadow: inset 0 0 0 1.5px rgb(200 55 44 / 0.55); }
+.signin.is-joined .btn-ink { background: var(--moss); }
+
+.signin-alt {
+  margin-top: 1.1rem;
+  font-size: 0.92rem;
+  color: var(--ink-faint);
+  transition: color 0.4s var(--ease);
+}
+.signin.is-error + .signin-alt { color: #c8372c; }
+.signin.is-joined + .signin-alt { color: var(--moss); }
+
+.colophon {
+  margin-top: clamp(4rem, 10vh, 7rem);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  line-height: 2;
+  color: var(--ink-faint);
+}
+
+/* ==========================================================================
+   GRAIN
+   ========================================================================== */
+
+.grain {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  pointer-events: none;
+  opacity: 0.07;
+  transform: translateZ(0);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.42'/%3E%3C/svg%3E");
+}
+
+/* ==========================================================================
+   BREAKPOINTS
+   ========================================================================== */
+
+@media (max-height: 620px) {
+  .title-hint { display: none; }
+}
+
+@media (max-width: 719px) {
+  .ruler { display: none; }
+  .sound { top: 0.8rem; left: 0.8rem; width: 2.6rem; height: 2.6rem; }
+  .xp { top: 0.8rem; right: 0.8rem; height: 2.4rem; }
+  .dock { bottom: 0.8rem; }
+  .dock-mark { padding: 0 0.9rem 0 1rem; font-size: 1.15rem; }
+  .dock-cta { min-width: 0; padding: 0 1.2rem; font-size: 0.86rem; }
+  .dock > a { height: 2.6rem; padding-block: calc((2.6rem - 1cap) / 2); }
+  .dock > .dock-up { width: 2.6rem; padding: 0; }
+}
+
+@media (max-width: 479px) {
+  .signin { flex-direction: column; border-radius: 1.6rem; padding: 0.5rem; }
+  .signin input { width: 100%; text-align: center; }
+  .signin .btn-ink { width: 100%; justify-content: center; padding-block: 1rem; }
+}
+
+/* Phones in portrait. The canvas draws the figure smaller, standing on the
+   bottom edge (frameRect in app.js), which opens a band above the head. Both
+   halves of each beat sit in that band, still on alternating sides. Keep the
+   query in step with phoneMQ in app.js. */
+@media (max-width: 899px) and (orientation: portrait) {
+  .beat { --lead: calc(clamp(2.6rem, 13vw, 5.5rem) * var(--fit, 0.8)); }
+  .part-a { top: calc(4.2rem + 7svh); transform: translateY(-50%); }
+  .part-b { top: calc(4.2rem + 18svh); transform: translateY(-50%); }
+  .title { --t: clamp(4rem, 21vw, 7.5rem); }
+  .title-hint { bottom: 5.4rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .beats { display: none; }
+  .title-hint::after, .sound.is-playing .wave { animation: none; }
+}

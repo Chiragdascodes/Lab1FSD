@@ -1,0 +1,13 @@
+{
+  "name": "we-rise",
+  "version": "1.0.0",
+  "private": true,
+  "description": "FSD Lab 01 — a scroll-told landing page in HTML5, CSS and vanilla JavaScript, with GSAP ScrollTrigger and a 300-frame canvas sequence.",
+  "scripts": {
+    "dev": "http-server . -p 5173 -c-1 -o",
+    "serve": "http-server . -p 5173 -c-1"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+}

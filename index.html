@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en" class="is-booting">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#EAF2EC" />
+
+<title>We Rise — discipline, as a system</title>
+<meta name="description" content="Your days, played like a game: quests for your habits, XP for deep work, and an AI that won’t let the loop win. A scroll-told story about the beliefs that keep you waiting." />
+<meta name="color-scheme" content="light" />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="We Rise — discipline, as a system" />
+<meta property="og:description" content="Your days, played like a game: quests for your habits, XP for deep work, and an AI that won’t let the loop win. A scroll-told story about the beliefs that keep you waiting." />
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="We Rise — discipline, as a system" />
+<meta name="twitter:description" content="Your days, played like a game: quests for your habits, XP for deep work, and an AI that won’t let the loop win. A scroll-told story about the beliefs that keep you waiting." />
+<meta name="author" content="Chirag Das" />
+
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%23EAF2EC'/%3E%3Cpath d='M9 21l7-11 7 11' fill='none' stroke='%231d3a2b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+<link rel="preload" href="assets/fonts/instrument-serif.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="preload" href="assets/fonts/pinyon-script.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="stylesheet" href="assets/fonts/fonts.css" />
+<link rel="stylesheet" href="css/app.css" />
+
+<noscript><style>
+  #gate{display:none!important}
+  .beat,.title{opacity:1!important;transform:none!important}
+  #stage{position:static!important;height:auto!important}
+  .quote-stage{display:none!important}
+  #smooth-wrapper,#smooth-content{position:static!important}
+  html.is-booting,html.is-booting body{overflow:auto!important;height:auto!important}
+</style></noscript>
+</head>
+
+<body>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     THE GATE — frosted ice with something alive under it. The page loads
+     behind; then you draw a circle to come in. (gate.js)
+     ══════════════════════════════════════════════════════════════════ -->
+<div id="gate" class="gate" role="dialog" aria-label="Loading. Then draw a circle to enter">
+  <canvas id="gate-gl" class="gate-gl" aria-hidden="true"></canvas>
+  <div class="gate-frost" aria-hidden="true"></div>
+  <div class="gate-noise" aria-hidden="true"></div>
+
+  <p id="gate-count" class="gate-count" aria-hidden="true">0</p>
+
+  <div class="gate-copy">
+    <p id="gate-label" class="gate-label" aria-live="polite">Draw a circle</p>
+    <p id="gate-sub" class="gate-sub">Hold and draw &middot; or press Enter</p>
+  </div>
+
+  <div id="gate-reward" class="gate-reward" aria-hidden="true">
+    <div class="gr-gem">
+      <svg class="gr-star" viewBox="0 0 100 100">
+        <defs>
+          <radialGradient id="star-fill" cx="42%" cy="38%" r="70%">
+            <stop offset="0%" stop-color="#fff6c9" />
+            <stop offset="45%" stop-color="#ffd966" />
+            <stop offset="100%" stop-color="#f2b43a" />
+          </radialGradient>
+        </defs>
+        <path d="M50 4 C54 34 66 46 96 50 C66 54 54 66 50 96 C46 66 34 54 4 50 C34 46 46 34 50 4 Z" fill="url(#star-fill)" />
+      </svg>
+    </div>
+    <p class="gr-xp">+ <span id="gate-reward-n">0</span> XP</p>
+  </div>
+</div>
+
+<!-- film grain over everything -->
+<div class="grain" aria-hidden="true"></div>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     CHROME — liquid glass, fixed, floats above the whole document (ui.js)
+     ══════════════════════════════════════════════════════════════════ -->
+<button id="sound" class="sound lg" type="button" aria-label="Sound" aria-pressed="false">
+  <svg viewBox="0 0 32 32" aria-hidden="true">
+    <path class="wave" d="M5 16 C8 16 8 16 10.5 16 S13 16 16 16 S19 16 21.5 16 S24 16 27 16" />
+  </svg>
+</button>
+
+<div class="ruler" aria-hidden="true">
+  <div id="ruler-ticks" class="ruler-ticks"></div>
+  <div id="ruler-mark" class="ruler-mark"></div>
+</div>
+
+<div id="xp" class="xp lg" aria-label="Experience points">
+  <svg class="xp-star" viewBox="0 0 100 100" aria-hidden="true">
+    <path d="M50 4 C54 34 66 46 96 50 C66 54 54 66 50 96 C46 66 34 54 4 50 C34 46 46 34 50 4 Z" />
+  </svg>
+  <span id="xp-n" class="xp-n">0</span><span class="xp-u">XP</span>
+</div>
+
+<nav class="dock lg" aria-label="Primary" data-frost="1.2">
+  <a class="dock-mark" href="#top" data-scroll-to="#top">We&nbsp;<em>Rise</em></a>
+  <a class="dock-cta" href="#start" data-scroll-to="#start">Join the waitlist</a>
+  <a class="dock-up" href="#top" data-scroll-to="#top" aria-label="Back to the top">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 14l6-6 6 6" /></svg>
+  </a>
+</nav>
+
+
+<div id="smooth-wrapper">
+<div id="smooth-content">
+
+<main id="top">
+
+  <!-- ════════════════════════════════════════════════════════════════
+       ACT ONE — one pin carries the whole story:
+         the title on white · the figure rises out of the mist ·
+         five beats split around it · the punch · the red room · the line
+       ════════════════════════════════════════════════════════════ -->
+  <section id="act-one">
+    <div id="stage">
+
+      <canvas id="film" aria-label="A figure lifting their head"></canvas>
+
+      <!-- snow and mist the figure emerges from -->
+      <canvas id="snow" class="snow" aria-hidden="true"></canvas>
+      <div class="mist" id="mist" aria-hidden="true"></div>
+
+      <!-- the opening line, alone on white -->
+      <h1 class="title" id="title">
+        <span class="t-sm">You</span>
+        <span class="t-lg"><span class="cap">B</span>elieved</span>
+      </h1>
+      <p class="title-hint" id="hint" aria-hidden="true">Scroll</p>
+
+      <!-- The story. Each beat is one sentence broken across the figure:
+           the first half high on one side, the second half low on the other,
+           so the eye crosses the character to finish reading it. Corners
+           alternate beat to beat. -->
+      <div class="beats" aria-hidden="true">
+        <div class="beat" data-at="0.00" data-flip="0">
+          <p class="part part-a"><span class="w-lg"><span class="cap">M</span>otivation</span><span class="w-sm">would</span></p>
+          <p class="part part-b"><span class="w-sm">find</span><span class="w-lg"><span class="cap">Y</span>ou</span></p>
+        </div>
+        <div class="beat" data-at="0.20" data-flip="1">
+          <p class="part part-a"><span class="w-lg"><span class="cap">A</span>nother app</span><span class="w-sm">would</span></p>
+          <p class="part part-b"><span class="w-sm">fix</span><span class="w-lg"><span class="cap">Y</span>ou</span></p>
+        </div>
+        <div class="beat" data-at="0.40" data-flip="0">
+          <p class="part part-a"><span class="w-lg"><span class="cap">D</span>eadlines</span><span class="w-sm">would</span></p>
+          <p class="part part-b"><span class="w-sm">push</span><span class="w-lg"><span class="cap">Y</span>ou</span></p>
+        </div>
+        <div class="beat" data-at="0.60" data-flip="1">
+          <p class="part part-a"><span class="w-lg"><span class="cap">M</span>onday</span><span class="w-sm">would</span></p>
+          <p class="part part-b"><span class="w-sm">reset</span><span class="w-lg"><span class="cap">Y</span>ou</span></p>
+        </div>
+        <div class="beat" data-at="0.80" data-flip="0">
+          <p class="part part-a"><span class="w-lg"><span class="cap">T</span>ime</span><span class="w-sm">would</span></p>
+          <p class="part part-b"><span class="w-sm">wait for</span><span class="w-lg"><span class="cap">Y</span>ou</span></p>
+        </div>
+      </div>
+
+      <!-- readable copy for screen readers and no-JS -->
+      <p class="sr-only">
+        You believed. Motivation would find you. Another app would fix you.
+        Deadlines would push you. Monday would reset you. Time would wait for you.
+        But, that's bullsh*t.
+      </p>
+
+      <!-- the cloud bank that swallows act one -->
+      <div class="clouds" id="clouds" aria-hidden="true"></div>
+      <!-- flat white wash (unused while the portal holds the last frame) -->
+      <div class="wash" id="wash" aria-hidden="true"></div>
+
+      <!-- ══════════════════════════════════════════════════════════════
+           THE RED ROOM — broken glass carrying the numbers (shards.js)
+           ══════════════════════════════════════════════════════════ -->
+      <canvas id="shards" class="shards-film" aria-hidden="true"></canvas>
+      <ul class="sr-only">
+        <li>43% of what you do each day is habit, not a decision. (Wood, Quinn and Kashy, 2002)</li>
+        <li>66 days, on average, to make a habit automatic, not 21. (Lally et al., UCL, 2010)</li>
+        <li>47% of waking hours, your mind is somewhere else. (Killingsworth and Gilbert, 2010)</li>
+        <li>23 minutes to get back on track after a single interruption. (Mark, Gudith and Klocke, 2008)</li>
+        <li>40% of productive time lost to switching between tasks. (Rubinstein, Meyer and Evans, 2001)</li>
+        <li>20% of adults are chronic procrastinators. (Ferrari et al., 2005)</li>
+      </ul>
+
+      <!-- ══════════════════════════════════════════════════════════════
+           THE QUOTE — resolves out of the red room's white
+           ══════════════════════════════════════════════════════════ -->
+      <div class="quote-stage" id="quote" aria-hidden="true">
+        <div class="quote-wrap">
+          <p class="quote">
+            <span class="q-line"><span class="q-mark">&ldquo;</span><em>Break</em> the pattern today,</span>
+            <span class="q-line">or the <em>loop</em> repeats tomorrow.<span class="q-mark">&rdquo;</span></span>
+          </p>
+        </div>
+      </div>
+      <p class="sr-only">Break the pattern today, or the loop repeats tomorrow.</p>
+
+      <!-- the red room's opening words, over the glass -->
+      <div class="red-copy" aria-live="polite">
+        <p class="red-but" id="red-but">But,</p>
+        <p class="red-line" id="red-line"><span class="t-sm">That's</span><span class="t-lg"><span class="cap">B</span>ullsh*t</span></p>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════════════
+           THE PORTAL — the hero sinks into black, and the black breaks
+           into the red room (portal.js)
+           ══════════════════════════════════════════════════════════ -->
+      <canvas id="portal" class="portal-film" aria-hidden="true"></canvas>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════════════
+       CLOSE — the waitlist
+       ════════════════════════════════════════════════════════════ -->
+  <section id="start">
+    <div class="shell start-inner">
+      <h2 class="close-title"><span class="t-sm">We</span><span class="t-lg"><span class="cap">R</span>ise</span></h2>
+      <p class="lede centre">Your days, played like a game. Quests for your habits, XP for deep work, and an AI that won&rsquo;t let the loop win.</p>
+
+      <form class="signin glass" id="waitlist" novalidate>
+        <label class="sr-only" for="email">Email address</label>
+        <input id="email" name="email" type="email" inputmode="email" autocomplete="email"
+               placeholder="you@example.com" required />
+        <button type="submit" class="btn-ink">Join the waitlist</button>
+      </form>
+      <p class="signin-alt" id="waitlist-note" aria-live="polite">No spam. One email when it&rsquo;s ready.</p>
+
+      <p class="colophon">
+        FSD · Lab 01 — a scroll-told landing page in HTML5, CSS and vanilla JavaScript,
+        with GSAP ScrollTrigger, WebGL and canvas image sequences.
+      </p>
+    </div>
+  </section>
+
+</main>
+
+</div>
+</div>
+
+<script src="js/vendor/gsap.min.js"></script>
+<script src="js/vendor/ScrollTrigger.min.js"></script>
+<script src="js/vendor/ScrollSmoother.min.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/gate.js"></script>
+<script src="js/shards.js"></script>
+<script src="js/portal.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
