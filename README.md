@@ -30,7 +30,7 @@ After the quote, before the waitlist, the page becomes the app in miniature
 
 | Piece | What it does | APIs |
 |---|---|---|
-| Where you rise | Finds you (or any city or country you search for), names the place, gives your next sunrise with a live countdown and the weather, and turns a realistic 3D Earth to you. The Earth is lit by the sun where it actually is right now: day and night imagery, city lights, clouds, ocean glint and atmosphere. Drag to turn it any way. | Geolocation API, Fetch API (Open-Meteo forecast and geocoding, BigDataCloud), Three.js on WebGL |
+| Where you rise | Finds you (or any city or country you search for), names the place, gives your next sunrise with a live countdown and the weather, and turns a realistic 3D Earth to you. The Earth is lit by the sun where it actually is right now: day and night imagery, city lights, clouds, ocean glint and atmosphere. A slim leader names your place outside the planet. Point at any country and it is named and outlined in white; click it to see its sunrise. Drag to turn it: it stops where you let go and glides back to your place when left alone. | Geolocation API, Fetch API (Open-Meteo forecast and geocoding, BigDataCloud), Three.js on WebGL |
 | Speak a quest | Say a quest and it is transcribed and saved; the coach answers in Microsoft's en-GB-RyanNeural voice (the Solo Leveling OS voice). Where the browser's recogniser works (Chrome, Edge) it transcribes live; elsewhere (Brave, Firefox) the page records the clip and transcribes it on-device with Whisper. Completing a quest pays 25 XP. | Web Speech API, MediaRecorder + getUserMedia, Transformers.js (Whisper tiny.en), Local Storage API |
 | Focus soundscape | Rain, brown noise or binaural alpha waves, generated live, drawn as a voice-memo waveform. | Web Audio API, Canvas API |
 
@@ -77,7 +77,7 @@ js/shards.js        the red room: flame scene and 3D glass shards (WebGL)
 js/system.js        the System: Earth, voice quests, soundscape
 js/vendor/          GSAP 3 with ScrollTrigger and ScrollSmoother
 assets/frames/      the 300-frame hero sequence (WebP)
-assets/earth/       Earth day, night and relief imagery (4K)
+assets/earth/       Earth day, night and relief imagery (4K), country outlines (Natural Earth)
 assets/voice/       the coach's lines in en-GB-RyanNeural
 assets/gate/        the hand under the frost
 assets/cursors/     custom cursors

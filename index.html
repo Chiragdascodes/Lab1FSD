@@ -252,11 +252,16 @@
           </div>
 
           <figure class="rise-globe" id="rise-globe">
-            <canvas id="globe" role="img" aria-label="The Earth, lit by the sun where it is now, with your location marked"></canvas>
-            <figcaption class="globe-cap">Drag to turn the Earth. It is lit by the sun as it is right now.</figcaption>
+            <div class="globe-stage">
+              <canvas id="globe" role="img" aria-label="The Earth, lit by the sun where it is now, with your place marked"></canvas>
+              <svg class="globe-lead" aria-hidden="true"><path class="lead-in" pathLength="1"/><path class="lead-out" pathLength="1"/><circle class="lead-end" r="2.25"/></svg>
+              <p class="globe-tag" id="globe-tag" aria-hidden="true"><span class="gt-name"></span><span class="gt-meta"></span><span class="gt-coord"></span></p>
+              <span class="globe-hover" id="globe-hover" aria-hidden="true"></span>
+            </div>
+            <figcaption class="globe-cap">Drag to turn the Earth. Point at a country to name it, click to see its sunrise.</figcaption>
           </figure>
 
-          <p class="tile-apis">Geolocation API &middot; Fetch API (Open-Meteo forecast and geocoding, BigDataCloud) &middot; Three.js on WebGL &middot; Earth imagery: Solar System Scope, CC BY 4.0</p>
+          <p class="tile-apis">Geolocation API &middot; Fetch API (Open-Meteo forecast and geocoding, BigDataCloud) &middot; Three.js on WebGL &middot; Earth imagery: Solar System Scope, CC BY 4.0 &middot; Borders: Natural Earth</p>
         </article>
 
         <!-- speak a quest -->

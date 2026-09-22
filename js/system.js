@@ -52,9 +52,9 @@ function save() {
 /* ======================================================================
    WHERE YOU RISE — the Earth (Three.js on WebGL)
    A real Earth: 4K day and night imagery, relief, ocean glint and clouds,
-   lit by the sun where it actually is right now, with a thin atmosphere
-   that warms along the line where the day is beginning. Turn it any way;
-   the whole planet stays in frame.
+   lit by the sun where it actually is right now, with a thin atmosphere.
+   A slim leader names your place outside the planet; point at a country
+   and it is named and drawn round in white (Natural Earth outlines).
    ====================================================================== */
 
 const globeBox = document.getElementById('rise-globe');
@@ -139,6 +139,7 @@ async function buildGlobe() {
         }`,
       fragmentShader: `
         uniform sampler2D uDay; uniform sampler2D uNight; uniform sampler2D uBRC; uniform vec3 uSun;
+        uniform sampler2D uSel; uniform float uSelOn;
         varying vec2 vUv; varying vec3 vN; varying vec3 vView; varying vec3 vObj; varying vec3 vSunV;
         void main(){
           vec3 n = normalize(vN), v = normalize(vView), l = normalize(vSunV);
@@ -165,6 +166,12 @@ async function buildGlobe() {
           float fres = 1.0 - max(dot(v, n), 0.0);
           vec3 atmo = mix(vec3(0.85, 0.45, 0.2), vec3(0.36, 0.62, 1.0), smoothstep(-0.02, 0.12, sunOrient));
           col = mix(col, atmo, pow(fres, 4.0) * smoothstep(-0.05, 0.6, sunOrient) * 0.7);
+
+          /* the country under the pointer: lifted a little, drawn round in white */
+          vec3 sel = texture2D(uSel, vUv).rgb * uSelOn;
+          col = mix(col, col * 1.25 + vec3(0.035, 0.045, 0.05), sel.r * 0.7);
+          col += vec3(0.85, 0.92, 1.0) * sel.b * 0.18;
+          col = mix(col, vec3(1.0), clamp(sel.g * 1.15, 0.0, 1.0));
 
           gl_FragColor = vec4(col, 1.0);
           #include <tonemapping_fragment>
@@ -208,89 +215,320 @@ async function buildGlobe() {
 
   /* you: a small bright point with a ring breathing out of it */
   const pin = new THREE.Group();
-  const pinDot = new THREE.Mesh(new THREE.CircleGeometry(0.014, 32),
+  const pinDot = new THREE.Mesh(new THREE.CircleGeometry(0.012, 32),
     new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide }));
-  const pinRing = new THREE.Mesh(new THREE.RingGeometry(0.022, 0.027, 64),
+  const pinRing = new THREE.Mesh(new THREE.RingGeometry(0.02, 0.024, 64),
     new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, depthWrite: false, side: THREE.DoubleSide }));
   pin.add(pinDot, pinRing);
   earth.add(pin);
 
-  /* turning: drag spins it about any axis, with inertia; left alone it
-     turns slowly on its own axis; asked to, it swings round to face you */
-  const spin = new THREE.Vector2(0, 0);
-  const Y = new THREE.Vector3(0, 1, 0), tmpQ = new THREE.Quaternion(), axis = new THREE.Vector3();
-  let target = null, dragging = false, lastX = 0, lastY = 0, idleAfter = 0;
-  earth.quaternion.setFromEuler(new THREE.Euler(0.3, -Math.PI / 2 - HOME.lon * Math.PI / 180, 0, 'XYZ'));
+  /* ---- turning ----
+     The Earth turns on its own axis (yaw) and tips towards you (pitch), so
+     north stays up. It follows the pointer closely and, let go, it stops
+     where it is: no sliding. Leave it alone and it glides back to the pin. */
+  const cur = { yaw: 0, pitch: 0 }, tgt = { yaw: 0, pitch: 0 }, home = { yaw: 0, pitch: 0 };
+  const PITCH = 1.3;
+  let dragging = false, moved = 0, lastX = 0, lastY = 0, ease = 5, lastTouch = 0, inside = false;
+  const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
+  function aim(yaw, pitch) {
+    tgt.yaw = cur.yaw + wrap(yaw - cur.yaw);         /* the short way round */
+    tgt.pitch = Math.max(-PITCH, Math.min(PITCH, pitch));
+  }
+  function facing(lat, lon) {
+    /* the pin sits a touch left of and below centre; its label goes up and out
+       into the space between the words and the planet */
+    return { yaw: -Math.PI / 2 - lon * Math.PI / 180 - 0.2, pitch: lat * Math.PI / 180 * 0.92 + 0.1 };
+  }
 
-  globe.placePin = (lat, lon) => {
-    const p = latLon(lat, lon, 1.003);
+  /* ---- the label: a slim leader from the pin out past the planet's edge ---- */
+  const stage = globeCanvas.parentElement;
+  const leadIn = stage.querySelector('.lead-in');
+  const leadOut = stage.querySelector('.lead-out');
+  const leadEnd = stage.querySelector('.lead-end');
+  const tag = document.getElementById('globe-tag');
+  const tagName = tag.querySelector('.gt-name');
+  const tagMeta = tag.querySelector('.gt-meta');
+  const tagCoord = tag.querySelector('.gt-coord');
+  let tagDraw = 0;                                    /* 0 → 1 as the leader draws on */
+  function fmtCoord(v, pos, neg) { return Math.abs(v).toFixed(2) + '° ' + (v >= 0 ? pos : neg); }
+
+  globe.placePin = (lat, lon, name) => {
+    const p = latLon(lat, lon, 1.002);
     pin.position.set(...p);
     pin.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), new THREE.Vector3(...p).normalize());
-    target = new THREE.Quaternion().setFromEuler(new THREE.Euler(lat * Math.PI / 180 * 0.85 + 0.12, -Math.PI / 2 - lon * Math.PI / 180, 0, 'XYZ'));
+    const f = facing(lat, lon);
+    home.yaw = f.yaw; home.pitch = f.pitch;
+    if (!dragging) { aim(f.yaw, f.pitch); ease = reduced ? 30 : 3.2; }
+    const parts = (name || '').split(',').map((s) => s.trim()).filter(Boolean);
+    tagName.textContent = parts[0] || 'Your place';
+    tagMeta.textContent = parts.slice(1).join(', ');
+    tagCoord.textContent = fmtCoord(lat, 'N', 'S') + '  ' + fmtCoord(lon, 'E', 'W');
+    tagDraw = reduced ? 1 : 0;
   };
 
-  function rotateBy(dx, dy) {
-    const angle = Math.hypot(dx, dy);
-    if (angle < 1e-6) return;
-    axis.set(dy, dx, 0).normalize();
-    tmpQ.setFromAxisAngle(axis, angle);
-    earth.quaternion.premultiply(tmpQ);
+  /* ---- countries: point at one to name it and outline it ---- */
+  const hoverChip = document.getElementById('globe-hover');
+  let countries = null, hovered = null, selOn = 0;
+  const selCanvas = document.createElement('canvas');
+  selCanvas.width = 2048; selCanvas.height = 1024;
+  const selCtx = selCanvas.getContext('2d');
+  const selTex = new THREE.CanvasTexture(selCanvas);
+  const selU = { value: 0 };
+  surface.material.uniforms.uSel = { value: selTex };
+  surface.material.uniforms.uSelOn = selU;
+
+  fetch('assets/earth/countries.json').then((r) => r.json()).then((list) => {
+    countries = list.map(([name, b, rings]) => ({
+      name,
+      box: b.map((v) => v / 100),
+      rings: rings.map((r) => Float32Array.from(r, (v) => v / 100))
+    }));
+  }).catch(() => {});
+
+  function inRing(r, x, y) {
+    let c = false;
+    for (let i = 0, j = r.length - 2; i < r.length; j = i, i += 2) {
+      const xi = r[i], yi = r[i + 1], xj = r[j], yj = r[j + 1];
+      if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c;
+    }
+    return c;
+  }
+  function countryAt(lat, lon) {
+    if (!countries) return null;
+    for (const c of countries) {
+      for (const x of [lon, lon + 360, lon - 360]) {
+        if (x < c.box[0] || x > c.box[2] || lat < c.box[1] || lat > c.box[3]) continue;
+        let n = 0;
+        for (const r of c.rings) if (inRing(r, x, lat)) n++;
+        if (n % 2) return c;
+      }
+    }
+    return null;
   }
 
+  /* the chosen country is drawn into a mask the surface shader reads:
+     red is the fill, green the outline, blue a soft glow round it */
+  function drawSelection(c) {
+    const W = selCanvas.width, H = selCanvas.height;
+    selCtx.globalCompositeOperation = 'source-over';
+    selCtx.clearRect(0, 0, W, H);
+    selCtx.fillStyle = '#000';
+    selCtx.fillRect(0, 0, W, H);
+    if (c) {
+      selCtx.globalCompositeOperation = 'lighter';
+      selCtx.lineJoin = 'round';
+      const trace = (dx) => {
+        selCtx.beginPath();
+        for (const r of c.rings) {
+          for (let i = 0; i < r.length; i += 2) {
+            const x = (r[i] + dx + 180) / 360 * W, y = (90 - r[i + 1]) / 180 * H;
+            if (i) selCtx.lineTo(x, y); else selCtx.moveTo(x, y);
+          }
+          selCtx.closePath();
+        }
+      };
+      for (const dx of [-360, 0, 360]) {
+        trace(dx);
+        selCtx.fillStyle = '#f00';
+        selCtx.fill('evenodd');
+        selCtx.shadowColor = '#00f'; selCtx.shadowBlur = 10;
+        selCtx.strokeStyle = '#00f'; selCtx.lineWidth = 4;
+        selCtx.stroke();
+        selCtx.shadowBlur = 0;
+        selCtx.strokeStyle = '#0f0'; selCtx.lineWidth = 2.2;
+        selCtx.stroke();
+      }
+    }
+    selTex.needsUpdate = true;
+  }
+  drawSelection(null);
+
+  const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), hit = new THREE.Vector3();
+  const ball = new THREE.Sphere(new THREE.Vector3(), 1), inv = new THREE.Quaternion();
+  let pointer = null;                                 /* last pointer position on the stage */
+  function pick() {
+    if (!pointer) return null;
+    const rect = globeCanvas.getBoundingClientRect();
+    ndc.set((pointer.x / rect.width) * 2 - 1, -(pointer.y / rect.height) * 2 + 1);
+    ray.setFromCamera(ndc, camera);
+    if (!ray.ray.intersectSphere(ball, hit)) return null;
+    hit.applyQuaternion(inv.copy(earth.quaternion).invert());
+    const lat = Math.asin(Math.max(-1, Math.min(1, hit.y))) * 180 / Math.PI;
+    const lon = Math.atan2(-hit.z, hit.x) * 180 / Math.PI;
+    return { lat, lon, country: countryAt(lat, lon) };
+  }
+  function setHover(c) {
+    if (c === hovered) return;
+    hovered = c;
+    if (c) { drawSelection(c); selOn = 0; hoverChip.textContent = c.name; }
+    hoverChip.classList.toggle('is-on', !!c);
+    stage.classList.toggle('is-pointing', !!c);
+  }
+  function placeChip() {
+    if (!pointer || !hovered) return;
+    const w = hoverChip.offsetWidth, W = stage.clientWidth;
+    let x = pointer.x + 16, y = pointer.y + 18;
+    if (x + w > W - 4) x = pointer.x - 16 - w;
+    hoverChip.style.transform = 'translate(' + Math.round(x) + 'px,' + Math.round(y) + 'px)';
+  }
+
+  /* ---- pointer ---- */
+  const local = (e) => {
+    const rect = globeCanvas.getBoundingClientRect();
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  };
   globeCanvas.addEventListener('pointerdown', (e) => {
-    dragging = true; target = null;
+    if (e.button !== 0) return;
+    dragging = true; moved = 0; ease = 16;
     lastX = e.clientX; lastY = e.clientY;
-    spin.set(0, 0);
+    tgt.yaw = cur.yaw; tgt.pitch = cur.pitch;
     globeCanvas.setPointerCapture(e.pointerId);
+    stage.classList.add('is-dragging');
   });
   globeCanvas.addEventListener('pointermove', (e) => {
-    if (!dragging) return;
-    const k = 0.0055;
-    const dx = (e.clientX - lastX) * k, dy = (e.clientY - lastY) * k;
-    lastX = e.clientX; lastY = e.clientY;
-    rotateBy(dx, dy);
-    spin.set(dx, dy);
+    pointer = local(e);
+    inside = true;
+    lastTouch = performance.now();
+    if (dragging) {
+      const dx = e.clientX - lastX, dy = e.clientY - lastY;
+      lastX = e.clientX; lastY = e.clientY;
+      moved += Math.abs(dx) + Math.abs(dy);
+      const k = 3.2 / globeCanvas.clientHeight;       /* about a turn across the planet */
+      tgt.yaw += dx * k;
+      tgt.pitch = Math.max(-PITCH, Math.min(PITCH, tgt.pitch + dy * k));
+      if (moved > 4) setHover(null);
+      return;
+    }
+    if (e.pointerType === 'mouse') { const p = pick(); setHover(p && p.country); placeChip(); }
   });
-  const endDrag = () => { dragging = false; idleAfter = performance.now() + 2500; };
+  const endDrag = (e) => {
+    if (!dragging) return;
+    dragging = false;
+    stage.classList.remove('is-dragging');
+    lastTouch = performance.now();
+    /* stop here: aim where the pointer left it, with nothing carried over */
+    tgt.yaw = cur.yaw + (tgt.yaw - cur.yaw) * 0.35;
+    tgt.pitch = cur.pitch + (tgt.pitch - cur.pitch) * 0.35;
+    ease = 22;
+    if (e.type === 'pointerup' && moved < 5) {
+      /* a click, not a drag: go to the country under the pointer */
+      pointer = local(e);
+      const p = pick();
+      if (p && p.country) {
+        riseStatus.textContent = 'Showing ' + p.country.name + '. Search again, or use your own location.';
+        placeInput.value = '';
+        loadPlace({ lat: p.lat, lon: p.lon, name: p.country.name }, true).then(() => award('rise', 50));
+      }
+    }
+  };
   globeCanvas.addEventListener('pointerup', endDrag);
   globeCanvas.addEventListener('pointercancel', endDrag);
+  globeCanvas.addEventListener('pointerleave', () => {
+    inside = false; pointer = null; lastTouch = performance.now();
+    if (!dragging) setHover(null);
+  });
 
   function resize() {
-    const w = globeBox.clientWidth;
-    if (!w) return;
-    renderer.setSize(w, w, false);
-    camera.aspect = 1;
+    const w = stage.clientWidth, h = stage.clientHeight;
+    if (!w || !h) return;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    /* the planet fills 84% of the height, its atmosphere a little more */
+    const alpha = Math.asin(1 / camera.position.z);
+    camera.fov = 2 * Math.atan(Math.tan(alpha) / 0.84) * 180 / Math.PI;
     camera.updateProjectionMatrix();
   }
-  new ResizeObserver(resize).observe(globeBox);
+  new ResizeObserver(resize).observe(stage);
   resize();
+
+  /* ---- each frame ---- */
+  const pinW = new THREE.Vector3(), pinN = new THREE.Vector3(), toCam = new THREE.Vector3(), scr = new THREE.Vector3();
+  const smooth = (a, b) => (x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+  const fadeFacing = smooth(0.1, 0.32);
+  function placeTag(dt) {
+    const W = stage.clientWidth, H = stage.clientHeight;
+    pin.getWorldPosition(pinW);
+    pinN.copy(pinW).normalize();
+    toCam.copy(camera.position).sub(pinW).normalize();
+    const vis = fadeFacing(pinN.dot(toCam));
+    scr.copy(pinW).project(camera);
+    const px = (scr.x + 1) / 2 * W, py = (1 - scr.y) / 2 * H;
+    const cx = W / 2, cy = H / 2, rs = H * 0.42;
+
+    /* out at 45°, towards the side the pin is on, unless the words would
+       not fit there */
+    const sy = py <= cy + rs * 0.3 ? -1 : 1;
+    const ox = px - cx, oy = py - cy;
+    const lead = (sx) => {
+      const dx = sx * Math.SQRT1_2, dy = sy * Math.SQRT1_2;
+      const b = ox * dx + oy * dy, c0 = ox * ox + oy * oy;
+      const reach = (R) => -b + Math.sqrt(Math.max(0, b * b - (c0 - R * R)));
+      const tS = reach(rs), tE = reach(rs + 24);
+      const E = [px + dx * tE, Math.max(14, Math.min(H - 14, py + dy * tE))];
+      return { sx, S: [px + dx * tS, py + dy * tS], E, T: [E[0] + sx * 24, E[1]] };
+    };
+    const tw = tag.offsetWidth;
+    const fits = (g) => g.sx > 0 ? g.T[0] + 10 + tw <= W + 40 : g.T[0] - 10 - tw >= -60;
+    let g = lead(px > cx + rs * 0.15 ? 1 : -1);
+    if (!fits(g)) { const o = lead(-g.sx); if (fits(o)) g = o; }
+    const { sx, S, E, T } = g;
+
+    if (tagDraw < 1) tagDraw = Math.min(1, tagDraw + dt / 1.1);
+    const k = tagDraw;
+    const inK = smooth(0.0, 0.35)(k), outK = smooth(0.3, 0.75)(k), txtK = smooth(0.6, 1)(k);
+    leadIn.setAttribute('d', 'M' + px.toFixed(1) + ' ' + py.toFixed(1) + 'L' + S[0].toFixed(1) + ' ' + S[1].toFixed(1));
+    leadOut.setAttribute('d', 'M' + S[0].toFixed(1) + ' ' + S[1].toFixed(1) + 'L' + E[0].toFixed(1) + ' ' + E[1].toFixed(1) +
+      'L' + T[0].toFixed(1) + ' ' + T[1].toFixed(1));
+    leadIn.style.strokeDashoffset = 1 - inK;
+    leadOut.style.strokeDashoffset = 1 - outK;
+    leadEnd.setAttribute('cx', T[0].toFixed(1));
+    leadEnd.setAttribute('cy', T[1].toFixed(1));
+    leadEnd.style.opacity = outK >= 1 ? 1 : 0;
+    stage.style.setProperty('--tag-vis', vis.toFixed(3));
+    tag.classList.toggle('is-left', sx < 0);
+    tag.style.opacity = (vis * txtK).toFixed(3);
+    tag.style.transform = 'translate(' + (T[0] + sx * 10).toFixed(1) + 'px,' + T[1].toFixed(1) + 'px) translate(' +
+      (sx < 0 ? '-100%' : '0') + ',-50%) translateX(' + ((1 - txtK) * sx * -8).toFixed(1) + 'px)';
+  }
 
   let t0 = performance.now();
   function frame(now) {
     const dt = Math.min(0.05, (now - t0) / 1000); t0 = now;
     if (globe.visible && !document.hidden) {
-      if (target && !dragging) {
-        earth.quaternion.slerp(target, Math.min(1, dt * 2.4));
-      } else if (!dragging) {
-        if (spin.lengthSq() > 1e-8) {
-          rotateBy(spin.x, spin.y);
-          spin.multiplyScalar(Math.pow(0.05, dt));
-        } else if (!reduced && now > idleAfter) {
-          earth.quaternion.multiply(tmpQ.setFromAxisAngle(Y, dt * 0.06));
-        }
+      /* left alone for a while, the Earth glides back to your place */
+      if (!dragging && !inside && now - lastTouch > 4000 &&
+          (Math.abs(wrap(home.yaw - tgt.yaw)) > 1e-3 || Math.abs(home.pitch - tgt.pitch) > 1e-3)) {
+        aim(home.yaw, home.pitch); ease = 2.6;
       }
+      const f = 1 - Math.exp(-dt * ease);
+      const before = cur.yaw + cur.pitch;
+      cur.yaw += (tgt.yaw - cur.yaw) * f;
+      cur.pitch += (tgt.pitch - cur.pitch) * f;
+      earth.rotation.set(cur.pitch, cur.yaw, 0, 'XYZ');
+      earth.updateMatrixWorld();
+
+      /* keep the outline true while the planet moves under a still pointer */
+      if (inside && !dragging && Math.abs(cur.yaw + cur.pitch - before) > 1e-5) {
+        const p = pick(); setHover(p && p.country);
+      }
+      selOn += ((hovered ? 1 : 0) - selOn) * (1 - Math.exp(-dt * 14));
+      selU.value = selOn;
+
       const k = (now / 1000) % 2.4 / 2.4;
       pinRing.scale.setScalar(1 + k * 3);
       pinRing.material.opacity = (1 - k) * 0.9;
+      placeTag(dt);
       renderer.render(scene, camera);
     }
     requestAnimationFrame(frame);
   }
-  requestAnimationFrame(frame);
 
   globe.ready = true;
   const p = state.place || HOME;
-  globe.placePin(p.lat, p.lon);
+  const f0 = facing(p.lat, p.lon);
+  cur.yaw = tgt.yaw = f0.yaw - 0.9; cur.pitch = tgt.pitch = f0.pitch;   /* arrive with a short turn */
+  globe.placePin(p.lat, p.lon, p.name);
+  requestAnimationFrame(frame);
   globeBox.classList.add('is-ready');
 }
 
@@ -375,7 +613,7 @@ async function loadPlace(place, isYours) {
       '. That first hour is yours. Spend it on the one thing that matters.';
     if (!isYours) riseStatus.textContent = 'Showing Bengaluru. Search any city or country, or use your own location.';
     tickSunrise();
-    if (globe.ready && globe.placePin) globe.placePin(lat, lon);
+    if (globe.ready && globe.placePin) globe.placePin(lat, lon, here);
   } catch (e) {
     riseStatus.textContent = 'The weather service did not answer. Try again in a moment.';
   }
