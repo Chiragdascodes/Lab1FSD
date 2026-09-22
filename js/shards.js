@@ -220,6 +220,10 @@
     '',
     /* clear glass: a breath brighter and cooler than what is behind it */
     '  vec3 col = mix(refr, vec3(lum), .1) * 1.05 + vec3(.055,.05,.058);',
+    /* thick glass takes the edge off bright light evenly, over the whole pane,
+       so white type reads on it anywhere: highlights roll off above a knee */
+    '  float cl = dot(col, vec3(.299,.587,.114));',
+    '  col *= cl > .5 ? (.5 + (cl - .5) * .38) / cl : 1.;',
     '',
     /* reflections: a soft gradient of sky and two streaks that slide with the turn */
     '  float s1 = dot(L, normalize(vec2(.8, .6))) + uTilt.x*6. - uTilt.y*4.;',
@@ -255,11 +259,7 @@
     '    float ta = texture2D(uText, tuv).a * inT;',
     '    float glow = (texture2D(uText, tuv + vec2(.005,0.)).a + texture2D(uText, tuv - vec2(.005,0.)).a',
     '               + texture2D(uText, tuv + vec2(0.,.009)).a + texture2D(uText, tuv - vec2(0.,.009)).a) * .25 * inT;',
-    /* bright light behind the words is held to a soft pink, so white reads on it */
-    '    float near = (texture2D(uText, tuv + vec2(.02,0.)).a + texture2D(uText, tuv - vec2(.02,0.)).a',
-    '               + texture2D(uText, tuv + vec2(0.,.04)).a + texture2D(uText, tuv - vec2(0.,.04)).a + glow*2.) / 6. * inT;',
-    '    col = mix(col, min(col, vec3(.78,.5,.48)), smoothstep(0., .35, near));',
-    '    col += vec3(1.,.95,.95) * glow * .12;',
+    '    col += vec3(1.,.95,.95) * glow * .08;',
     '    col = mix(col, vec3(1.), ta);',
     '  }',
     '',

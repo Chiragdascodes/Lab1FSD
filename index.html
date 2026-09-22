@@ -206,6 +206,109 @@
   </section>
 
   <!-- ════════════════════════════════════════════════════════════════
+       THE SYSTEM — the app in miniature, after the story (js/system.js)
+         Where you rise   · Geolocation API, Fetch API (Open-Meteo,
+                            BigDataCloud), Three.js on WebGL
+         Speak a quest    · Web Speech API or on-device Whisper,
+                            Microsoft en-GB-RyanNeural voice, Local Storage API
+         Focus soundscape · Web Audio API, Canvas API
+       ════════════════════════════════════════════════════════════ -->
+  <section id="system" class="system" aria-labelledby="system-title">
+    <div class="sys-wrap">
+
+      <header class="sys-head">
+        <h2 class="sys-title" id="system-title"><span class="t-sm">Start</span><span class="t-lg"><span class="cap">T</span>oday</span></h2>
+        <p class="sys-sub">The app in miniature, running right here in your browser.</p>
+      </header>
+
+      <div class="bento">
+
+        <!-- where you rise -->
+        <article class="tile tile-rise" aria-labelledby="rise-title">
+          <div class="rise-copy">
+            <h3 class="rise-title" id="rise-title"><span class="t-sm">Where you</span><span class="t-lg"><span class="cap">R</span>ise</span></h3>
+            <p class="rise-line" id="rise-line">Share your location and we&rsquo;ll find your sunrise: the first hour of your day, and the one most worth guarding.</p>
+
+            <dl class="specs">
+              <div><dt>Place</dt><dd id="rise-place">&mdash;</dd></div>
+              <div><dt>Next sunrise</dt><dd id="rise-sun">&mdash;</dd></div>
+              <div><dt>Arrives in</dt><dd id="rise-in">&mdash;</dd></div>
+              <div><dt>Right now</dt><dd id="rise-now">&mdash;</dd></div>
+            </dl>
+
+            <div class="tile-actions">
+              <button type="button" class="pill" id="rise-locate">Use my location</button>
+            </div>
+            <p class="tile-note" id="rise-status">Your coordinates are sent only to Open-Meteo for sunrise and weather, and to BigDataCloud for the place name.</p>
+          </div>
+
+          <figure class="rise-globe" id="rise-globe">
+            <canvas id="globe" role="img" aria-label="The Earth, lit by the sun where it is now, with your location marked"></canvas>
+            <figcaption class="globe-cap">Drag to turn the Earth. It is lit by the sun as it is right now.</figcaption>
+          </figure>
+
+          <p class="tile-apis">Geolocation API &middot; Fetch API &middot; Three.js on WebGL &middot; Earth imagery: Solar System Scope, CC BY 4.0</p>
+        </article>
+
+        <!-- speak a quest -->
+        <article class="tile tile-voice" aria-labelledby="vq-title">
+          <p class="tile-label">Speak a quest</p>
+          <h3 class="tile-head" id="vq-title">Say it out loud. It&rsquo;s on the list.</h3>
+
+          <div class="vq-stage">
+            <button type="button" class="vq-mic" id="vq-mic" aria-pressed="false" aria-label="Speak a quest">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" /></svg>
+            </button>
+            <div class="vq-meter" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+            <p class="vq-live" id="vq-live" aria-live="polite">&ldquo;Read for twenty minutes&rdquo;</p>
+          </div>
+
+          <form class="field" id="vq-type" autocomplete="off">
+            <label class="sr-only" for="vq-input">Or type a quest</label>
+            <input id="vq-input" type="text" maxlength="60" placeholder="Or type a quest" />
+            <button type="submit" class="field-go" aria-label="Add quest">
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9M8.5 4.5L12 8l-3.5 3.5" /></svg>
+            </button>
+          </form>
+
+          <ol class="vq-list" id="vq-list" aria-label="Your quests"></ol>
+          <p class="tile-note" id="vq-status">Tap the mic and say it. Finishing a quest earns 25 XP.</p>
+          <p class="tile-apis">Web Speech API &middot; MediaRecorder with on-device Whisper &middot; Voice: Microsoft en-GB-RyanNeural &middot; Local Storage API</p>
+        </article>
+
+        <!-- focus soundscape -->
+        <article class="tile tile-sound" aria-labelledby="fs-title">
+          <p class="tile-label">Focus soundscape</p>
+          <h3 class="tile-head" id="fs-title">Sound that holds the room.</h3>
+
+          <div class="fs-stage">
+            <canvas id="fs-viz" aria-hidden="true"></canvas>
+          </div>
+
+          <div class="fs-row">
+            <button type="button" class="fs-play" id="fs-play" aria-pressed="false" aria-label="Play the soundscape">
+              <svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" /></svg>
+              <svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5h3v14H8zM13 5h3v14h-3z" /></svg>
+            </button>
+            <div class="segmented" role="radiogroup" aria-label="Soundscape">
+              <button type="button" role="radio" data-mode="rain" aria-checked="true">Rain</button>
+              <button type="button" role="radio" data-mode="brown" aria-checked="false">Brown noise</button>
+              <button type="button" role="radio" data-mode="alpha" aria-checked="false">Alpha</button>
+            </div>
+          </div>
+          <label class="fs-vol"><span class="sr-only">Volume</span>
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 6h2.5L8.5 3v10L5 10H2.5z" /></svg>
+            <input type="range" id="fs-vol" min="0" max="1" step="0.01" value="0.6" />
+          </label>
+          <p class="tile-note" id="fs-status">Generated live, nothing downloaded. Alpha plays a slightly different tone in each ear; use headphones.</p>
+          <p class="tile-apis">Web Audio API &middot; Canvas API</p>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════════════
        CLOSE — the waitlist
        ════════════════════════════════════════════════════════════ -->
   <section id="start">
@@ -241,6 +344,7 @@
 <script src="js/shards.js"></script>
 <script src="js/portal.js"></script>
 <script src="js/app.js"></script>
+<script type="module" src="js/system.js"></script>
 
 </body>
 </html>

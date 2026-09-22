@@ -298,6 +298,15 @@
     g.linearRampToValueAtTime(on ? 0.55 : 0, t + (on ? 2.4 : 0.6));
   }
 
+  /* the focus soundscape (system.js) asks the ambient bed to step back */
+  WR.duckAmbient = function (duck) {
+    if (!audio || !soundOn) return;
+    var g = audio.master.gain, t = audio.ctx.currentTime;
+    g.cancelScheduledValues(t);
+    g.setValueAtTime(g.value, t);
+    g.linearRampToValueAtTime(duck ? 0.1 : 0.55, t + 1.2);
+  };
+
   function reflectSound() {
     var btn = document.getElementById('sound');
     if (!btn) return;
@@ -484,6 +493,8 @@
   var xp = { value: 0, shown: 0 };
   var paid = {};
 
+  WR.getXP = function () { return xp.value; };
+
   WR.award = function (key, amount) {
     if (paid[key]) return;
     paid[key] = true;
@@ -492,6 +503,7 @@
     if (!pill || !num) return;
 
     xp.value += amount;
+    document.dispatchEvent(new CustomEvent('wr:xp', { detail: xp.value }));
     gsap.to(xp, {
       shown: xp.value,
       duration: reduced ? 0 : 1.1,

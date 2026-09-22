@@ -23,6 +23,24 @@ WebGL shaders and a 300-frame canvas image sequence. No framework, no build step
 The chrome — liquid-glass sound button, XP counter, scroll ruler, dock, custom
 cursors and the generated soundtrack — lives in `js/ui.js`.
 
+## Exercise 2 — the System (HTML5 APIs)
+
+After the quote, before the waitlist, the page becomes the app in miniature
+(`js/system.js`, an ES module):
+
+| Piece | What it does | APIs |
+|---|---|---|
+| Where you rise | Finds you, names the place, gives your next sunrise with a live countdown and the weather, and turns a realistic 3D Earth to you. The Earth is lit by the sun where it actually is right now: day and night imagery, city lights, clouds, ocean glint and atmosphere. Drag to turn it any way. | Geolocation API, Fetch API (Open-Meteo, BigDataCloud), Three.js on WebGL |
+| Speak a quest | Say a quest and it is transcribed and saved; the coach answers in Microsoft's en-GB-RyanNeural voice (the Solo Leveling OS voice). Where the browser's recogniser works (Chrome, Edge) it transcribes live; elsewhere (Brave, Firefox) the page records the clip and transcribes it on-device with Whisper. Completing a quest pays 25 XP. | Web Speech API, MediaRecorder + getUserMedia, Transformers.js (Whisper tiny.en), Local Storage API |
+| Focus soundscape | Rain, brown noise or binaural alpha waves, generated live, drawn as a voice-memo waveform. | Web Audio API, Canvas API |
+
+Three.js, the Earth imagery and the Whisper model load only when needed; the
+globe only draws while it is on screen. The coach's lines are rendered from
+Microsoft Edge's neural text-to-speech into `assets/voice/`; when the browser
+itself offers the Ryan voice (Microsoft Edge does), it also reads the quest back.
+Earth imagery: [Solar System Scope](https://www.solarsystemscope.com/textures/),
+CC BY 4.0, via the three.js examples. Open-Meteo and BigDataCloud need no API key.
+
 ## The numbers on the glass
 
 | Finding | Source |
@@ -56,8 +74,11 @@ js/gate.js          the loading gate: WebGL frost, the hand, loop recognition
 js/app.js           the pinned story: intro, hero frames, beats, quote, waitlist
 js/portal.js        the crimson bleed and the break into the red room
 js/shards.js        the red room: flame scene and 3D glass shards (WebGL)
+js/system.js        the System: Earth, voice quests, soundscape
 js/vendor/          GSAP 3 with ScrollTrigger and ScrollSmoother
 assets/frames/      the 300-frame hero sequence (WebP)
+assets/earth/       Earth day, night and relief imagery (4K)
+assets/voice/       the coach's lines in en-GB-RyanNeural
 assets/gate/        the hand under the frost
 assets/cursors/     custom cursors
 assets/fonts/       self-hosted Instrument Serif, Pinyon Script, Space Grotesk
