@@ -1106,21 +1106,38 @@ html.is-locked, html.is-locked body { overflow: hidden; }
 .globe-cap { margin-top: 0.5rem; font-size: 0.78rem; text-align: center; color: var(--ink-faint); }
 .tile-rise .tile-apis { grid-column: 1 / -1; }
 
-/* the one dark moment in the section: the Earth against space */
-.tile-rise {
-  background: radial-gradient(90% 120% at 78% 45%, #0f1c19 0%, #070b0a 62%, #050807 100%);
-  color: #a9bab2;
+/* choosing a place: search any city or country, or use your own */
+.place-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; width: 100%; }
+.place-search { position: relative; flex: 1 1 15rem; min-width: 0; }
+.place-field { padding-left: 0.9rem; }
+.field-icon { flex: none; width: 16px; height: 16px; fill: none; stroke: var(--ink-faint); stroke-width: 1.6; stroke-linecap: round; }
+.place-list {
+  position: absolute;
+  z-index: 5;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  max-height: 300px;
+  margin: 0;
+  padding: 6px;
+  overflow-y: auto;
+  list-style: none;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 16px 40px rgb(20 50 40 / 0.16), 0 0 0 1px rgb(20 50 40 / 0.06);
 }
-.tile-rise .t-lg { background-image: linear-gradient(180deg, #ffffff 0%, #d6e9e1 55%, #a9cbbd 100%); }
-.tile-rise .t-sm { color: #cfe3da; }
-.tile-rise .cap { color: #e4f1eb; -webkit-text-fill-color: #e4f1eb; }
-.tile-rise .rise-line { color: #eef4f1; }
-.tile-rise .specs div { border-top-color: rgb(255 255 255 / 0.12); }
-.tile-rise .specs dt { color: #7f948b; }
-.tile-rise .specs dd { color: #f4f8f5; }
-.tile-rise .tile-note, .tile-rise .tile-apis, .tile-rise .globe-cap { color: #76897f; }
-.tile-rise .pill { background: #f4f8f5; color: #0b1310; }
-.tile-rise :focus-visible { outline-color: #9fd3b8; }
+.place-list li {
+  display: flex;
+  flex-direction: column;
+  padding: 0.6rem 0.75rem;
+  border-radius: 10px;
+  cursor: url("../assets/cursors/point.svg") 13 4, pointer;
+}
+.place-list li[aria-selected="true"] { background: var(--field); }
+.place-list .pl-name { font-size: 0.94rem; color: var(--ink); }
+.place-list .pl-where { font-size: 0.78rem; color: var(--ink-faint); }
+.place-list .pl-empty { font-size: 0.88rem; color: var(--ink-faint); cursor: default; }
+
 
 /* ---- speak a quest ---- */
 .vq-stage { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; min-height: 64px; }

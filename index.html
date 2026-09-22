@@ -236,10 +236,19 @@
               <div><dt>Right now</dt><dd id="rise-now">&mdash;</dd></div>
             </dl>
 
-            <div class="tile-actions">
+            <div class="place-controls">
+              <div class="place-search" role="search">
+                <div class="field place-field">
+                  <svg class="field-icon" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5" /><path d="M10.4 10.4L14 14" /></svg>
+                  <label class="sr-only" for="place-input">Search a city or country</label>
+                  <input id="place-input" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false"
+                         aria-controls="place-list" autocomplete="off" spellcheck="false" placeholder="Search a city or country" />
+                </div>
+                <ul class="place-list" id="place-list" role="listbox" aria-label="Places" hidden></ul>
+              </div>
               <button type="button" class="pill" id="rise-locate">Use my location</button>
             </div>
-            <p class="tile-note" id="rise-status">Your coordinates are sent only to Open-Meteo for sunrise and weather, and to BigDataCloud for the place name.</p>
+            <p class="tile-note" id="rise-status">Search any city or country, or use your own location. Coordinates go only to Open-Meteo and BigDataCloud.</p>
           </div>
 
           <figure class="rise-globe" id="rise-globe">
@@ -247,7 +256,7 @@
             <figcaption class="globe-cap">Drag to turn the Earth. It is lit by the sun as it is right now.</figcaption>
           </figure>
 
-          <p class="tile-apis">Geolocation API &middot; Fetch API &middot; Three.js on WebGL &middot; Earth imagery: Solar System Scope, CC BY 4.0</p>
+          <p class="tile-apis">Geolocation API &middot; Fetch API (Open-Meteo forecast and geocoding, BigDataCloud) &middot; Three.js on WebGL &middot; Earth imagery: Solar System Scope, CC BY 4.0</p>
         </article>
 
         <!-- speak a quest -->

@@ -373,7 +373,7 @@ async function loadPlace(place, isYours) {
       Math.round(w.current.temperature_2m) + '°, ' + weatherWord(w.current.weather_code);
     riseLine.textContent = 'The sun comes up over ' + here.split(',')[0] + ' at ' + sunriseLabel + ' ' + sunriseDay +
       '. That first hour is yours. Spend it on the one thing that matters.';
-    if (!isYours) riseStatus.textContent = 'Showing Bengaluru. Use your location to see your own sunrise.';
+    if (!isYours) riseStatus.textContent = 'Showing Bengaluru. Search any city or country, or use your own location.';
     tickSunrise();
     if (globe.ready && globe.placePin) globe.placePin(lat, lon);
   } catch (e) {
@@ -398,7 +398,7 @@ locateBtn.addEventListener('click', () => {
   locateBtn.textContent = 'Finding you…';
   navigator.geolocation.getCurrentPosition((pos) => {
     locateBtn.disabled = false;
-    locateBtn.textContent = 'Update my location';
+    locateBtn.textContent = 'Use my location';
     riseStatus.textContent = 'Located to within ' + Math.round(pos.coords.accuracy) + ' m. Coordinates go only to Open-Meteo and BigDataCloud.';
     loadPlace({ lat: pos.coords.latitude, lon: pos.coords.longitude }, true).then(() => award('rise', 50));
   }, (err) => {
@@ -409,7 +409,100 @@ locateBtn.addEventListener('click', () => {
       : 'Your location could not be found just now. Try again.';
   }, { enableHighAccuracy: false, timeout: 12000, maximumAge: 600000 });
 });
-if (state.place) locateBtn.textContent = 'Update my location';
+/* the button always offers your own location; search is the other way in */
+
+/* ---- or choose a place: Open-Meteo geocoding, any city or country ---- */
+const placeInput = document.getElementById('place-input');
+const placeList = document.getElementById('place-list');
+let placeResults = [], placeActive = -1, placeTimer = 0, placeAbort = null;
+
+function placeLabel(r) {
+  /* a country is just its name; a city gets its region and country */
+  if (/^PCL/.test(r.feature_code || '')) return { name: r.name, where: 'Country', full: r.name };
+  const where = [r.admin1, r.country].filter((x, i, a) => x && a.indexOf(x) === i && x !== r.name).join(', ');
+  return { name: r.name, where, full: [r.name, r.country].filter(Boolean).join(', ') };
+}
+
+function closePlaces() {
+  placeList.hidden = true;
+  placeInput.setAttribute('aria-expanded', 'false');
+  placeInput.removeAttribute('aria-activedescendant');
+  placeActive = -1;
+}
+
+function markActive(i) {
+  placeActive = i;
+  [...placeList.children].forEach((li, k) => li.setAttribute('aria-selected', k === i ? 'true' : 'false'));
+  if (i >= 0 && placeList.children[i]) {
+    placeInput.setAttribute('aria-activedescendant', placeList.children[i].id);
+    placeList.children[i].scrollIntoView({ block: 'nearest' });
+  }
+}
+
+function showPlaces(results) {
+  placeResults = results;
+  placeList.textContent = '';
+  if (!results.length) {
+    const li = document.createElement('li');
+    li.className = 'pl-empty';
+    li.textContent = 'No places found';
+    li.setAttribute('aria-disabled', 'true');
+    placeList.appendChild(li);
+  }
+  results.forEach((r, i) => {
+    const l = placeLabel(r);
+    const li = document.createElement('li');
+    li.id = 'place-opt-' + i;
+    li.setAttribute('role', 'option');
+    li.setAttribute('aria-selected', 'false');
+    const n = document.createElement('span'); n.className = 'pl-name'; n.textContent = l.name;
+    const w = document.createElement('span'); w.className = 'pl-where'; w.textContent = l.where;
+    li.append(n, w);
+    li.addEventListener('mousedown', (e) => { e.preventDefault(); choosePlace(i); });
+    li.addEventListener('mousemove', () => { if (placeActive !== i) markActive(i); });
+    placeList.appendChild(li);
+  });
+  placeList.hidden = false;
+  placeInput.setAttribute('aria-expanded', 'true');
+  markActive(results.length ? 0 : -1);
+}
+
+function searchPlaces(q) {
+  if (placeAbort) placeAbort.abort();
+  placeAbort = new AbortController();
+  fetch('https://geocoding-api.open-meteo.com/v1/search?name=' + encodeURIComponent(q) + '&count=6&language=en&format=json',
+    { signal: placeAbort.signal })
+    .then((r) => r.json())
+    .then((d) => { if (placeInput.value.trim() === q) showPlaces(d.results || []); })
+    .catch((e) => { if (e.name !== 'AbortError') riseStatus.textContent = 'Place search is unavailable right now.'; });
+}
+
+function choosePlace(i) {
+  const r = placeResults[i];
+  if (!r) return;
+  const l = placeLabel(r);
+  placeInput.value = l.full;
+  closePlaces();
+  placeInput.blur();
+  riseStatus.textContent = 'Showing ' + l.full + '. Search again, or use your own location.';
+  loadPlace({ lat: r.latitude, lon: r.longitude, name: l.full }, true).then(() => award('rise', 50));
+}
+
+placeInput.addEventListener('input', () => {
+  clearTimeout(placeTimer);
+  const q = placeInput.value.trim();
+  if (q.length < 2) { closePlaces(); return; }
+  placeTimer = setTimeout(() => searchPlaces(q), 220);
+});
+placeInput.addEventListener('keydown', (e) => {
+  const open = !placeList.hidden && placeResults.length;
+  if (e.key === 'ArrowDown' && open) { e.preventDefault(); markActive((placeActive + 1) % placeResults.length); }
+  else if (e.key === 'ArrowUp' && open) { e.preventDefault(); markActive((placeActive - 1 + placeResults.length) % placeResults.length); }
+  else if (e.key === 'Enter') { e.preventDefault(); if (open) choosePlace(Math.max(0, placeActive)); }
+  else if (e.key === 'Escape') closePlaces();
+});
+placeInput.addEventListener('blur', () => setTimeout(closePlaces, 120));
+placeInput.addEventListener('focus', () => { if (placeResults.length && placeInput.value.trim().length >= 2) showPlaces(placeResults); });
 
 /* ======================================================================
    SPEAK A QUEST — speech to text, text to speech, Local Storage
