@@ -406,6 +406,7 @@ function line() {
 /* ---- input: the count, live ---- */
 text.addEventListener('input', () => {
   const n = text.value.length;
+  if (n) wrap.classList.remove('is-bad');
   count.textContent = n + '/90';
   count.classList.toggle('is-near', n > 72);
   wrap.classList.toggle('is-filled', n > 0);
@@ -415,6 +416,7 @@ text.addEventListener('input', () => {
 /* ---- focus and blur: the helper comes and goes ---- */
 text.addEventListener('focus', () => {
   wrap.classList.add('is-focus');
+  if (wrap.classList.contains('is-bad')) return;   /* leave the complaint up */
   hint.textContent = 'One sentence. The shorter it is, the harder it is to argue with.';
 });
 text.addEventListener('blur', () => {
@@ -447,9 +449,9 @@ form.addEventListener('submit', (e) => {
   const planned = state.cards.filter((c) => c.lane !== 'unplanned').length;
   if (said.length < 8) {
     wrap.classList.add('is-bad');
-    hint.textContent = 'Write the line first — eight characters or more.';
     intentStatus.textContent = 'The day needs a line.';
     text.focus();
+    hint.textContent = 'Write the line first — eight characters or more.';
     if (!reduced && window.gsap) gsap.fromTo(wrap, { x: -6 }, { x: 0, duration: 0.5, ease: 'elastic.out(1, 0.35)' });
     return;
   }
