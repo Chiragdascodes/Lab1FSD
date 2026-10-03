@@ -323,6 +323,100 @@
   </section>
 
   <!-- ════════════════════════════════════════════════════════════════
+       MAKE THE DAY — events, where they earn their place (js/plan.js)
+         The board  · drag and drop (dragstart, dragover, dragleave, drop,
+                      dragend), keydown to move a quest without a mouse,
+                      contextmenu for its own menu, mouseover to light its
+                      hour, dblclick to finish it
+         The line   · input for the live count, focus and blur for the
+                      helper, change on the hour and the minutes, submit
+                      to lock the day in
+       ════════════════════════════════════════════════════════════ -->
+  <section id="plan" class="system plan" aria-labelledby="plan-title">
+    <div class="sys-wrap">
+
+      <header class="sys-head">
+        <h2 class="sys-title" id="plan-title"><span class="t-sm">Make the</span><span class="t-lg"><span class="cap">D</span>ay</span></h2>
+        <p class="sys-sub">A quest with no hour is a wish. Give each one its hour.</p>
+      </header>
+
+      <div class="bento">
+
+        <!-- the board -->
+        <article class="tile tile-board" aria-labelledby="board-title">
+          <p class="tile-label">Plan the day</p>
+          <h3 class="tile-head" id="board-title">Three hours decide the day.</h3>
+
+          <div class="board" id="board"></div>
+
+          <p class="tile-note" id="board-status" aria-live="polite">Drag a quest into an hour. Or focus one and press the arrow keys.</p>
+          <p class="tile-apis">dragstart &middot; dragover &middot; drop &middot; dragend &middot; keydown &middot; contextmenu &middot; mouseover &middot; dblclick</p>
+        </article>
+
+        <!-- the one line -->
+        <article class="tile tile-intent" aria-labelledby="intent-title">
+          <p class="tile-label">Set the intention</p>
+          <h3 class="tile-head" id="intent-title">One line, and the hour you&rsquo;ll defend.</h3>
+
+          <form id="intent-form" novalidate>
+            <div class="ta-wrap" id="ta-wrap">
+              <label class="sr-only" for="intent-text">Your one line for today</label>
+              <textarea id="intent-text" rows="2" maxlength="90" spellcheck="false"
+                        placeholder="Today I will&hellip;" aria-describedby="intent-hint"></textarea>
+              <p class="ta-row">
+                <span class="ta-hint" id="intent-hint">Say it in one sentence. Eight characters is enough to start.</span>
+                <span class="ta-count" id="intent-count">0/90</span>
+              </p>
+            </div>
+
+            <div class="intent-row">
+              <label class="pick" for="intent-slot">
+                <span class="pick-label">Hour</span>
+                <select id="intent-slot">
+                  <option value="first">The first hour</option>
+                  <option value="midday">Midday</option>
+                  <option value="evening">Evening</option>
+                </select>
+              </label>
+              <label class="pick pick-range" for="intent-mins">
+                <span class="pick-label">Minutes <b id="intent-mins-out">45</b></span>
+                <input type="range" id="intent-mins" min="15" max="90" step="15" value="45" />
+              </label>
+            </div>
+
+            <p class="intent-line" id="intent-line">Pick an hour and write your line.</p>
+
+            <div class="tile-actions">
+              <button type="submit" class="pill" id="intent-go">Lock it in</button>
+              <button type="button" class="text-link" id="intent-clear">Start again</button>
+            </div>
+            <p class="tile-note" id="intent-status" aria-live="polite">Nothing leaves this browser. The day is kept on this device.</p>
+          </form>
+
+          <p class="tile-apis">input &middot; change &middot; focus &middot; blur &middot; submit</p>
+        </article>
+
+        <!-- the keys -->
+        <article class="tile tile-keys" aria-labelledby="keys-title">
+          <p class="tile-label">Without a mouse</p>
+          <h3 class="tile-head" id="keys-title">Every move has a key.</h3>
+          <dl class="keys">
+            <div><dt><kbd>Tab</kbd></dt><dd>Move to a quest</dd></div>
+            <div><dt><kbd>&larr;</kbd> <kbd>&rarr;</kbd></dt><dd>Send it to another hour</dd></div>
+            <div><dt><kbd>&uarr;</kbd> <kbd>&darr;</kbd></dt><dd>Move along the hour</dd></div>
+            <div><dt><kbd>D</kbd></dt><dd>Mark it done</dd></div>
+            <div><dt><kbd>Del</kbd></dt><dd>Take it off the board</dd></div>
+            <div><dt>Right-click</dt><dd>Its own menu</dd></div>
+          </dl>
+          <p class="tile-note">On a phone, tap a quest, then tap the hour it belongs to.</p>
+          <p class="tile-apis">keydown &middot; Local Storage API</p>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════════════
        CLOSE — the waitlist
        ════════════════════════════════════════════════════════════ -->
   <section id="start">
@@ -359,6 +453,7 @@
 <script src="js/portal.js"></script>
 <script src="js/app.js"></script>
 <script type="module" src="js/system.js"></script>
+<script type="module" src="js/plan.js"></script>
 
 </body>
 </html>

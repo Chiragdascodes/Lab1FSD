@@ -47,6 +47,7 @@ const state = (() => {
 function save() {
   if (!canStore) return;
   try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+  window.dispatchEvent(new CustomEvent('wr:quests', { detail: state.quests }));
 }
 
 /* ======================================================================
@@ -613,6 +614,7 @@ async function loadPlace(place, isYours) {
       '. That first hour is yours. Spend it on the one thing that matters.';
     if (!isYours) riseStatus.textContent = 'Showing Bengaluru. Search any city or country, or use your own location.';
     tickSunrise();
+    window.dispatchEvent(new CustomEvent('wr:sunrise', { detail: { label: sunriseLabel, at: sunriseAt, place: here } }));
     if (globe.ready && globe.placePin) globe.placePin(lat, lon, here);
   } catch (e) {
     riseStatus.textContent = 'The weather service did not answer. Try again in a moment.';

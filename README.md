@@ -41,6 +41,28 @@ itself offers the Ryan voice (Microsoft Edge does), it also reads the quest back
 Earth imagery: [Solar System Scope](https://www.solarsystemscope.com/textures/),
 CC BY 4.0, via the three.js examples. Open-Meteo and BigDataCloud need no API key.
 
+## Exercise 3 — Make the Day (event handling)
+
+After the System, the quests get an hour against them (, an ES
+module). Every event does a job that could not be done without it:
+
+| Event | Where | What it does |
+|---|---|---|
+| , , , ,  | the board | Drag a quest between the tray, the first hour, midday and evening. The hour lights up as the quest passes over it, and the board is saved the moment it lands. |
+|  | the board | The same move without a mouse: arrows send a quest to another hour or move along one, D marks it done, Delete takes it off. |
+|  | a quest | Right-click opens the quest's own menu instead of the browser's: move it, finish it, remove it. |
+| ,  | a quest | Lights the hour the quest belongs to and tells you what you can do with it. |
+|  | a quest | Finishes it. |
+|  | the board | Tells a finger from a mouse: a phone taps a quest, then taps its hour; a mouse keeps drag and double-click. |
+|  | the one line | The live count as you write, and the sentence underneath rewritten as you go. |
+| ,  | the one line | The helper appears while you write and the line is saved when you leave. |
+|  | hour and minutes | Choosing the hour flashes that hour on the board; the minutes are kept. |
+|  | the form | Checked here, not by the browser: a line of eight characters or more, and at least one quest with an hour. Locking the day in pays 50 XP. |
+
+The quests you speak in the System arrive here on their own (the System
+announces them with a  event), and the first hour is named with
+the sunrise it found (). The board is kept in Local Storage.
+
 ## The numbers on the glass
 
 | Finding | Source |
@@ -75,6 +97,7 @@ js/app.js           the pinned story: intro, hero frames, beats, quote, waitlist
 js/portal.js        the crimson bleed and the break into the red room
 js/shards.js        the red room: flame scene and 3D glass shards (WebGL)
 js/system.js        the System: Earth, voice quests, soundscape
+js/plan.js          Make the Day: the board of hours, drag and drop, the one line
 js/vendor/          GSAP 3 with ScrollTrigger and ScrollSmoother
 assets/frames/      the 300-frame hero sequence (WebP)
 assets/earth/       Earth day, night and relief imagery (4K), country outlines (Natural Earth)

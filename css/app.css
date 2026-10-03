@@ -1376,6 +1376,234 @@ html.is-locked, html.is-locked body { overflow: hidden; }
 }
 
 /* ==========================================================================
+   MAKE THE DAY — the board of hours (js/plan.js)
+   ========================================================================== */
+
+.plan { padding-block: clamp(3rem, 7vh, 5rem) clamp(5rem, 11vh, 8rem); }
+.plan .sys-title { font-size: clamp(3.4rem, 8vw, 7.5rem); }
+
+.tile-board { grid-column: 1 / -1; }
+.tile-intent { grid-column: span 7; }
+.tile-keys { grid-column: span 5; }
+
+/* ---- the board ---- */
+.board {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.9rem;
+  margin-top: 0.5rem;
+}
+.lane {
+  display: flex;
+  flex-direction: column;
+  min-height: 15rem;
+  padding: 1rem 0.85rem 0.85rem;
+  border-radius: 16px;
+  background: var(--field);
+  transition: box-shadow 0.25s var(--ease), background-color 0.3s var(--ease);
+}
+.lane-tray { background: rgb(20 50 40 / 0.045); }
+.lane.is-lit { box-shadow: inset 0 0 0 1px rgb(44 122 75 / 0.3); }
+.lane.is-over {
+  background: rgb(44 122 75 / 0.09);
+  box-shadow: inset 0 0 0 1.5px var(--moss);
+}
+.lane-head { display: grid; grid-template-columns: 1fr auto; align-items: baseline; margin-bottom: 0.85rem; }
+.lane-name { margin: 0; font-size: 0.88rem; font-weight: 600; color: var(--ink); }
+.lane-when {
+  grid-column: 1;
+  margin: 0.15rem 0 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-faint);
+}
+.lane-n {
+  grid-row: 1;
+  grid-column: 2;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: rgb(20 50 40 / 0.07);
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 20px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+}
+.lane-n:empty { display: none; }
+.lane-list { flex: 1; display: flex; flex-direction: column; gap: 0.5rem; margin: 0; padding: 0; list-style: none; }
+.lane-empty {
+  display: grid;
+  place-items: center;
+  min-height: 4.5rem;
+  padding: 0.5rem;
+  border: 1px dashed rgb(20 50 40 / 0.16);
+  border-radius: 12px;
+  font-size: 0.78rem;
+  text-align: center;
+  text-wrap: balance;
+  color: var(--ink-faint);
+}
+
+/* ---- a quest on the board ---- */
+.card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 0.7rem 0.75rem;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 0 0 0.5px rgb(20 50 40 / 0.1), 0 1px 2px rgb(20 50 40 / 0.06);
+  font-size: 0.88rem;
+  line-height: 1.35;
+  color: var(--ink);
+  cursor: grab;
+  transition: transform 0.22s var(--ease), box-shadow 0.22s var(--ease), opacity 0.2s var(--ease);
+}
+.card:hover { transform: translateY(-2px); box-shadow: 0 0 0 0.5px rgb(20 50 40 / 0.12), 0 8px 20px -10px rgb(20 50 40 / 0.4); }
+.card:active { cursor: grabbing; }
+.card.is-dragging { opacity: 0.35; transform: scale(0.98); }
+.card.is-held { box-shadow: 0 0 0 1.5px var(--moss), 0 8px 20px -10px rgb(20 50 40 / 0.4); }
+.card.is-done .card-text { color: var(--ink-faint); text-decoration: line-through; text-decoration-color: rgb(44 122 75 / 0.5); }
+.card-grip { flex: none; margin-top: 0.15rem; }
+.card-grip svg { display: block; width: 10px; height: 16px; fill: rgb(20 50 40 / 0.26); }
+.card-text { overflow-wrap: anywhere; }
+.board.is-dragging-on .lane:not(.is-over) { background: rgb(20 50 40 / 0.035); }
+
+/* ---- the quest's own menu ---- */
+.tile-board { position: relative; }
+.pm-menu {
+  position: absolute;
+  z-index: 5;
+  min-width: 12.5rem;
+  padding: 0.3rem;
+  border-radius: 14px;
+  background: rgb(255 255 255 / 0.9);
+  -webkit-backdrop-filter: blur(18px) saturate(1.5);
+  backdrop-filter: blur(18px) saturate(1.5);
+  box-shadow: 0 0 0 0.5px rgb(20 50 40 / 0.14), 0 18px 40px -18px rgb(20 50 40 / 0.55);
+}
+.pm-item {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.65rem;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  font-size: 0.85rem;
+  text-align: left;
+  color: var(--ink);
+  transition: background-color 0.15s var(--ease);
+}
+.pm-item:hover, .pm-item:focus-visible { background: var(--field); }
+.pm-item.is-danger { color: #a3342c; }
+
+/* ---- the one line ---- */
+.ta-wrap {
+  padding: 0.9rem 1rem 0.7rem;
+  border-radius: 16px;
+  background: var(--field);
+  transition: box-shadow 0.25s var(--ease);
+}
+.ta-wrap.is-focus { box-shadow: inset 0 0 0 1.5px var(--moss); }
+.ta-wrap.is-bad { box-shadow: inset 0 0 0 1.5px #c0493f; }
+.ta-wrap textarea {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: none;
+  resize: none;
+  font-family: 'Instrument Serif', 'Times New Roman', serif;
+  font-size: clamp(1.3rem, 1.8vw, 1.6rem);
+  line-height: 1.25;
+  color: var(--ink);
+}
+.ta-wrap textarea::placeholder { color: var(--ink-faint); }
+.ta-wrap textarea:focus { outline: none; }
+.ta-row { display: flex; align-items: baseline; gap: 1rem; margin: 0.6rem 0 0; }
+.ta-hint { flex: 1; font-size: 0.76rem; line-height: 1.4; color: var(--ink-faint); }
+.ta-count { font-size: 0.74rem; font-variant-numeric: tabular-nums; color: var(--ink-faint); }
+.ta-count.is-near { color: var(--moss); }
+
+.intent-row { display: flex; flex-wrap: wrap; gap: 0.9rem; margin: 1.1rem 0 1rem; }
+.pick {
+  flex: 1 1 11rem;
+  min-width: 0;
+  padding: 0.6rem 0.9rem 0.7rem;
+  border-radius: 14px;
+  background: var(--field);
+}
+.pick:focus-within { box-shadow: inset 0 0 0 1.5px var(--moss); }
+.pick-label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.pick-label b { font-weight: 600; font-variant-numeric: tabular-nums; color: var(--moss); }
+.pick select {
+  width: 100%;
+  height: 26px;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 0.94rem;
+  color: var(--ink);
+}
+.pick select:focus { outline: none; }
+.pick-range input { width: 100%; height: 26px; accent-color: var(--moss); }
+.intent-line {
+  margin: 0 0 1.25rem;
+  font-family: 'Instrument Serif', 'Times New Roman', serif;
+  font-size: clamp(1.05rem, 1.3vw, 1.2rem);
+  line-height: 1.4;
+  text-wrap: pretty;
+  color: var(--ink-soft);
+}
+
+/* ---- the keys ---- */
+.keys { margin: 0.5rem 0 0; }
+.keys > div {
+  display: grid;
+  grid-template-columns: 6.5rem 1fr;
+  align-items: center;
+  gap: 1rem;
+  min-height: 46px;
+  border-bottom: 1px solid var(--hair);
+}
+.keys > div:last-child { border-bottom: 0; }
+.keys dt { font-size: 0.78rem; color: var(--ink-faint); }
+.keys dd { margin: 0; font-size: 0.92rem; color: var(--ink); }
+.keys kbd {
+  display: inline-grid;
+  place-items: center;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 0.4rem;
+  border-radius: 7px;
+  background: var(--field);
+  box-shadow: 0 0 0 0.5px rgb(20 50 40 / 0.12);
+  font-family: inherit;
+  font-size: 0.78rem;
+  color: var(--ink);
+}
+
+@media (max-width: 979px) {
+  .tile-intent, .tile-keys { grid-column: 1 / -1; }
+  .board { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 519px) {
+  .board { grid-template-columns: minmax(0, 1fr); gap: 0.7rem; }
+  .lane { min-height: 0; }
+  .keys > div { grid-template-columns: 5.5rem 1fr; }
+}
+
+/* ==========================================================================
    GRAIN
    ========================================================================== */
 
