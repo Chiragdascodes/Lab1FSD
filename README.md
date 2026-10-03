@@ -43,25 +43,26 @@ CC BY 4.0, via the three.js examples. Open-Meteo and BigDataCloud need no API ke
 
 ## Exercise 3 — Make the Day (event handling)
 
-After the System, the quests get an hour against them (, an ES
+After the System, the quests get an hour against them (`js/plan.js`, an ES
 module). Every event does a job that could not be done without it:
 
 | Event | Where | What it does |
 |---|---|---|
-| , , , ,  | the board | Drag a quest between the tray, the first hour, midday and evening. The hour lights up as the quest passes over it, and the board is saved the moment it lands. |
-|  | the board | The same move without a mouse: arrows send a quest to another hour or move along one, D marks it done, Delete takes it off. |
-|  | a quest | Right-click opens the quest's own menu instead of the browser's: move it, finish it, remove it. |
-| ,  | a quest | Lights the hour the quest belongs to and tells you what you can do with it. |
-|  | a quest | Finishes it. |
-|  | the board | Tells a finger from a mouse: a phone taps a quest, then taps its hour; a mouse keeps drag and double-click. |
-|  | the one line | The live count as you write, and the sentence underneath rewritten as you go. |
-| ,  | the one line | The helper appears while you write and the line is saved when you leave. |
-|  | hour and minutes | Choosing the hour flashes that hour on the board; the minutes are kept. |
-|  | the form | Checked here, not by the browser: a line of eight characters or more, and at least one quest with an hour. Locking the day in pays 50 XP. |
+| `dragstart`, `dragover`, `dragleave`, `drop`, `dragend` | the board | Drag a quest between the tray, the first hour, midday and evening. The hour lights up as the quest passes over it, and the board is saved the moment it lands. |
+| `keydown` | the board | The same move without a mouse: arrows send a quest to another hour or move along one, D marks it done, Delete takes it off. |
+| `contextmenu` | a quest | Right-click opens the quest's own menu instead of the browser's: move it, finish it, remove it. |
+| `mouseover`, `mouseout` | a quest | Lights the hour the quest belongs to, and says what can be done with it. |
+| `dblclick` | a quest | Finishes it. |
+| `pointerdown` | the board | Tells a finger from a mouse: a phone taps a quest, then taps its hour; a mouse keeps drag and double-click. |
+| `input` | the one line | The live count as you write, and the sentence underneath rewritten as you go. |
+| `focus`, `blur` | the one line | The helper appears while you write, and the line is saved when you leave. |
+| `change` | hour and minutes | Choosing the hour flashes that hour on the board; the minutes are kept. |
+| `submit` | the form | Checked here, not by the browser: a line of eight characters or more, and at least one quest with an hour. Locking the day in pays 50 XP. |
 
 The quests you speak in the System arrive here on their own (the System
-announces them with a  event), and the first hour is named with
-the sunrise it found (). The board is kept in Local Storage.
+announces them with a `wr:quests` event), and the first hour is named with the
+sunrise it found (`wr:sunrise`). The board is kept in Local Storage, so the day
+survives a refresh.
 
 ## The numbers on the glass
 
